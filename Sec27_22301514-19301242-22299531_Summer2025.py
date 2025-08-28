@@ -109,11 +109,12 @@ def draw_player():
         draw_sword()
     glPopMatrix()
 
-def draw_sword(sword_angle = -90):
+def draw_sword(sword_angle =90, x=0, y=1, z=0):
     glPushMatrix()
-    glRotatef(sword_angle, 1, -1, 0)
+    
     glColor3f(1, 0, 0)  
-    glTranslatef(-110, 0, 80)
+    glTranslatef(-100, 100, 90)
+    glRotatef(sword_angle, x, y, z)
     gluCylinder(gluNewQuadric(), 20, 1, 250, 20, 20)
     glPopMatrix()
 
@@ -161,6 +162,11 @@ def mouseListener(button, state, x, y):
     if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
         if current_weapon == "gun":
             shoot_bullet()
+        elif current_weapon == "sword":
+            draw_sword(sword_angle =90, x=0, y=1, z=0)
+            draw_sword(sword_angle =45, x=0, y=1, z=0)
+            draw_sword(sword_angle =0, x=0, y=1, z=0)
+
     glutPostRedisplay()
 
 
