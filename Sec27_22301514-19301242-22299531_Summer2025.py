@@ -13,7 +13,7 @@ MELEE_CREATURE = 1
 RANGED_ATTACKER = 2
 FINAL_BOSS = 3
 
-camera_pos = (0,1000,1000)
+camera_pos = (0,2100,1000)
 camera_mode = "third_person"
 
 fovY = 120
@@ -396,7 +396,7 @@ def mouseListener(button, state, x, y):
 def setupCamera():
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    gluPerspective(fovY, 1.25, 0.1, 2500)
+    gluPerspective(fovY, 1.25, 0.1, 5000)
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
 
