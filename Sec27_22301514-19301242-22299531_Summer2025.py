@@ -556,6 +556,15 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
+
+
 # Srizon enemy part
 
 from OpenGL.GL import *
