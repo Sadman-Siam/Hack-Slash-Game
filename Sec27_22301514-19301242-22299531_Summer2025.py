@@ -726,7 +726,7 @@ class EnemyCreature:
         dy = self.y - target[1]
         return math.sqrt(dx*dx + dy*dy)
 
-    def handle_ai_behavior(self, delta_time, distance_to_player, current_time):
+    def handle_behavior(self, delta_time, distance_to_player, current_time):
         if self.creature_type == MELEE_CREATURE:
             if distance_to_player < 350:
                 self.behavior_state = "hunting"
