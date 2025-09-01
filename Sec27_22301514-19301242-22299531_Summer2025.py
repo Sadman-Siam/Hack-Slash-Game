@@ -11,7 +11,10 @@ camera_pos = (0,500,500)
 camera_mode = "third_person"
 
 fovY = 120
-GRID_LENGTH = 600
+GRID_LENGTH = 2000
+
+#Day/Night
+day_night_cycle = 0  # 0 to 1, where 0 is day, 1 is night
 
 # Character properties
 character_pos = [0, 0, 50]  # x, y, z position (starting at center, slightly above ground)
@@ -51,6 +54,64 @@ collectible_size = 25
 max_collectibles = 2  # Maximum number of collectibles on map
 spawn_timer = 0
 spawn_interval = 300  # Frames between spawn attempts (5 seconds)
+
+# Map obstacles for each level
+obstacles = {
+    1: [
+        {"type": "cube", "x": -400, "y": -400, "z": 50, "size": 100},
+        {"type": "cube", "x": 400, "y": 400, "z": 50, "size": 100},
+        {"type": "cylinder", "x": -400, "y": 400, "z": 0, "radius": 60, "height": 100},
+        {"type": "cylinder", "x": 400, "y": -400, "z": 0, "radius": 60, "height": 100},
+    ],
+    2: [
+        {"type": "cube", "x": 0, "y": 0, "z": 50, "size": 80},
+        {"type": "cylinder", "x": -500, "y": -500, "z": 0, "radius": 70, "height": 120},
+        {"type": "cylinder", "x": 500, "y": 500, "z": 0, "radius": 70, "height": 120},
+    ],
+    3: [
+        {"type": "cube", "x": 500, "y": 0, "z": 50, "size": 80},
+        {"type": "cube", "x": -500, "y": 0, "z": 50, "size": 80},
+        {"type": "cube", "x": 0, "y": 500, "z": 50, "size": 80},
+        {"type": "cube", "x": 0, "y": -500, "z": 50, "size": 80},
+    ]
+}
+
+# Add level tracking
+current_level = 1
+
+def draw_obstacles():
+    for obstacle in obstacles[current_level]:
+        glPushMatrix()
+        glTranslatef(obstacle['x'], obstacle['y'], obstacle['z'])
+        
+        if obstacle['type'] == 'cube':
+            glColor3f(0.8, 0.6, 0.4)
+            glutSolidCube(obstacle['size'])
+        elif obstacle['type'] == 'cylinder':
+            glColor3f(0.4, 0.6, 0.8)
+            glRotatef(90, 1, 0, 0)
+            gluCylinder(gluNewQuadric(), obstacle['radius'], obstacle['radius'], obstacle['height'], 20, 20)
+        
+        glPopMatrix()
+
+def check_obstacle_collision(new_x, new_y):
+    player_radius = 40
+    
+    for obstacle in obstacles[current_level]:
+        obs_x, obs_y = obstacle['x'], obstacle['y']
+        
+        if obstacle['type'] == 'cube':
+            obs_size = obstacle['size']
+            dist = math.sqrt((new_x - obs_x)**2 + (new_y - obs_y)**2)
+            if dist < (player_radius + obs_size/2):
+                return True
+        elif obstacle['type'] == 'cylinder':
+            obs_radius = obstacle['radius']
+            dist = math.sqrt((new_x - obs_x)**2 + (new_y - obs_y)**2)
+            if dist < (player_radius + obs_radius):
+                return True
+    
+    return False
 
 def spawn_collectible():
     """Spawn a random collectible on the map"""
@@ -339,16 +400,24 @@ def setupCamera():
     glMatrixMode(GL_PROJECTION)  # Switch to projection matrix mode
     glLoadIdentity()  # Reset the projection matrix
     # Set up a perspective projection (field of view, aspect ratio, near clip, far clip)
-    gluPerspective(fovY, 1.25, 0.1, 1500) # Think why aspect ration is 1.25?
+    gluPerspective(fovY, 1.25, 0.1, 5000) # Think why aspect ration is 1.25?
     glMatrixMode(GL_MODELVIEW)  # Switch to model-view matrix mode
     glLoadIdentity()  # Reset the model-view matrix
 
-    # Extract camera position and look-at target
-    x, y, z = camera_pos
-    # Position the camera and set its orientation
-    gluLookAt(x, y, z,  # Camera position
-              0, 0, 0,  # Look-at target
-              0, 0, 1)  # Up vector (z-axis)
+    # Third-person camera that follows the player
+    camera_distance = 300
+    camera_height = 150
+    
+    # Calculate camera position based on player rotation
+    angle_rad = math.radians(player_rotation)
+    cam_x = player_x - camera_distance * math.cos(angle_rad)
+    cam_y = player_y - camera_distance * math.sin(angle_rad)
+    cam_z = player_z + camera_height
+    
+    # Look at the player
+    gluLookAt(cam_x, cam_y, cam_z,
+              player_x, player_y, player_z + 50,
+              0, 0, 1)
 
 
 def keyboardListener(key, x, y):
@@ -364,10 +433,10 @@ def keyboardListener(key, x, y):
         new_x = player_x + movement_speed * math.sin(angle_rad)
         new_y = player_y - movement_speed * math.cos(angle_rad)
         
-        if -GRID_LENGTH + 50 < new_x < GRID_LENGTH - 50:
+        if -GRID_LENGTH + 100 < new_x < GRID_LENGTH - 100:
             player_x = new_x
             character_pos[0] = new_x
-        if -GRID_LENGTH + 50 < new_y < GRID_LENGTH - 50:
+        if -GRID_LENGTH + 100 < new_y < GRID_LENGTH - 100:
             player_y = new_y
             character_pos[1] = new_y
             
@@ -376,10 +445,10 @@ def keyboardListener(key, x, y):
         new_x = player_x - movement_speed * math.sin(angle_rad)
         new_y = player_y + movement_speed * math.cos(angle_rad)
         
-        if -GRID_LENGTH + 50 < new_x < GRID_LENGTH - 50:
+        if -GRID_LENGTH + 100 < new_x < GRID_LENGTH - 100:
             player_x = new_x
             character_pos[0] = new_x
-        if -GRID_LENGTH + 50 < new_y < GRID_LENGTH - 50:
+        if -GRID_LENGTH + 100 < new_y < GRID_LENGTH - 100:
             player_y = new_y
             character_pos[1] = new_y
             
@@ -388,10 +457,10 @@ def keyboardListener(key, x, y):
         new_x = player_x + movement_speed * math.cos(angle_rad)
         new_y = player_y + movement_speed * math.sin(angle_rad)
         
-        if -GRID_LENGTH + 50 < new_x < GRID_LENGTH - 50:
+        if -GRID_LENGTH + 100 < new_x < GRID_LENGTH - 100:
             player_x = new_x
             character_pos[0] = new_x
-        if -GRID_LENGTH + 50 < new_y < GRID_LENGTH - 50:
+        if -GRID_LENGTH + 100 < new_y < GRID_LENGTH - 100:
             player_y = new_y
             character_pos[1] = new_y
             
@@ -400,10 +469,10 @@ def keyboardListener(key, x, y):
         new_x = player_x - movement_speed * math.cos(angle_rad)
         new_y = player_y - movement_speed * math.sin(angle_rad)
         
-        if -GRID_LENGTH + 50 < new_x < GRID_LENGTH - 50:
+        if -GRID_LENGTH + 100 < new_x < GRID_LENGTH - 100:
             player_x = new_x
             character_pos[0] = new_x
-        if -GRID_LENGTH + 50 < new_y < GRID_LENGTH - 50:
+        if -GRID_LENGTH + 100 < new_y < GRID_LENGTH - 100:
             player_y = new_y
             character_pos[1] = new_y
             
@@ -437,6 +506,9 @@ def idle():
     """
     Idle function that runs continuously
     """
+    # Update day/night cycle
+    day_night_cycle = (day_night_cycle + 0.0005) % 1.0
+
     # Update bullets
     update_bullets()
     
@@ -460,6 +532,8 @@ def showScreen():
     - Draws everything of the screen
     """
     # Clear color and depth buffers
+    day_color = 0.5 + 0.3 * math.sin(day_night_cycle * 2 * math.pi)
+    glClearColor(day_color * 0.2, day_color * 0.2, day_color * 0.4, 1.0)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()  # Reset modelview matrix
     glViewport(0, 0, 1000, 800)  # Set viewport size
@@ -498,6 +572,9 @@ def showScreen():
     glVertex3f(0, 0, 0)
     glVertex3f(0, GRID_LENGTH, 0)
     glEnd()
+
+    # Draw the obstacles
+    draw_obstacles()
 
     # Draw the character
     draw_player()
