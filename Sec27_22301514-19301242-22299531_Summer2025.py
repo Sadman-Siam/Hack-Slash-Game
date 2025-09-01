@@ -884,70 +884,67 @@ class Enemy:
         glPushMatrix()
         glTranslatef(self.x, self.y, self.z)
         
-        bob = math.sin(self.anim_t * 2) * 3
+        bob = math.sin(self.anim_t * 2.5) * 4
         glTranslatef(0, 0, bob)
         
-        gentle_pulse = 1.0 + math.sin(self.anim_t * 3) * 0.1
+        pulse = 1.0 + math.sin(self.anim_t * 5) * 0.15
         
         if self.type == MELEE_TYPE:
-            # Elegant Knight - Sophisticated silver and blue
-            glColor3f(0.8, 0.85, 0.9)  # Elegant silver-blue
-            glScalef(gentle_pulse, gentle_pulse, gentle_pulse)
-            glutSolidSphere(self.radius * 0.9, 16, 16)
+            # Robotic Warrior - Dark metallic with red accents
+            glColor3f(0.2, 0.25, 0.3)  # Dark gunmetal
+            glScalef(pulse, pulse, pulse)
             
-            # Graceful armor plates
-            glColor3f(0.6, 0.7, 0.8)
-            for i in range(8):
+            # Main body - angular design
+            glPushMatrix()
+            glScalef(1.2, 0.8, 1.0)
+            glutSolidCube(self.radius)
+            glPopMatrix()
+            
+            # Shoulder guards
+            glColor3f(0.8, 0.1, 0.1)  # Deep red accents
+            for side in [-1, 1]:
                 glPushMatrix()
-                glRotatef(i * 45, 0, 0, 1)
-                glTranslatef(self.radius * 0.6, 0, 0)
-                glRotatef(self.anim_t * 20, 0, 1, 0)
-                glScalef(0.3, 0.1, 0.8)
-                glutSolidCube(20)
+                glTranslatef(side * self.radius * 0.7, 0, self.radius * 0.3)
+                glScalef(0.4, 0.3, 0.6)
+                glutSolidCube(25)
                 glPopMatrix()
                 
         elif self.type == RANGED_TYPE:
-            # Elegant Mage - Sophisticated teal and gold
-            glColor3f(0.0, 0.7, 0.7)  # Elegant teal
-            glScalef(gentle_pulse, gentle_pulse, gentle_pulse)
-            glutSolidSphere(self.radius * 0.85, 20, 20)
+            # Stealth Assassin - Black and electric blue
+            glColor3f(0.1, 0.1, 0.15)  # Deep black
+            glScalef(pulse, pulse, pulse)
             
-            # Floating mystical orbs
-            glColor3f(0.9, 0.8, 0.4)  # Soft gold
-            for i in range(4):
+            # Sleek triangular body
+            glRotatef(45, 0, 0, 1)
+            glutSolidTetrahedron()
+            glScalef(self.radius * 0.8, self.radius * 0.8, self.radius * 0.8)
+            
+            # Electric blue energy lines
+            glColor3f(0.0, 0.4, 1.0)
+            for i in range(3):
                 glPushMatrix()
-                glRotatef(self.anim_t * 60 + i * 90, 0, 0, 1)
-                glTranslatef(self.radius * 1.2, 0, 15)
-                glutSolidSphere(8, 12, 12)
-                # Subtle glow effect
-                glColor3f(1.0, 0.9, 0.6)
-                glutWireSphere(12, 8, 8)
-                glColor3f(0.9, 0.8, 0.4)
+                glRotatef(i * 120 + self.anim_t * 100, 0, 0, 1)
+                glTranslatef(self.radius * 0.5, 0, 0)
+                glScalef(0.8, 0.05, 0.05)
+                glutSolidCube(30)
                 glPopMatrix()
                 
         else:
-            # Majestic Boss - Deep royal colors
-            glColor3f(0.4, 0.15, 0.6)  # Deep royal purple
-            glScalef(gentle_pulse, gentle_pulse, gentle_pulse)
-            glutSolidSphere(self.radius, 24, 24)
+            # Ancient Golem Boss - Stone and gold
+            glColor3f(0.4, 0.35, 0.3)  # Ancient stone
+            glScalef(pulse, pulse, pulse)
             
-            # Elegant crown-like structure
-            glColor3f(0.8, 0.6, 0.9)  # Soft lavender
-            for i in range(8):
-                glPushMatrix()
-                glRotatef(i * 45, 0, 0, 1)
-                glTranslatef(0, 0, self.radius * 0.8)
-                glRotatef(self.anim_t * 40 + i * 45, 0, 0, 1)
-                glutSolidCone(8, 25, 8, 8)
-                glPopMatrix()
+            # Multi-layered ancient design
+            glutSolidSphere(self.radius, 20, 20)
             
-            # Floating essence spheres
-            glColor3f(0.9, 0.7, 1.0)  # Soft pink-purple
-            for i in range(3):
+            # Golden runes floating around
+            glColor3f(0.9, 0.7, 0.2)  # Ancient gold
+            for i in range(12):
                 glPushMatrix()
-                glRotatef(self.anim_t * 25 + i * 120, 0, 0, 1)
-                glTranslatef(self.radius * 1.8, 0, math.sin(self.anim_t * 2 + i) * 20)
-                glutSolidSphere(15, 12, 12)
+                glRotatef(i * 30 + self.anim_t * 50, 0, 0, 1)
+                glRotatef(math.sin(self.anim_t + i) * 20, 1, 0, 0)
+                glTranslatef(self.radius * 1.4, 0, 0)
+                glutSolidCube(8)
                 glPopMatrix()
         
         self.draw_current_weapon()
@@ -967,60 +964,53 @@ class Enemy:
         glTranslatef(self.radius * 0.7, 0, 0)
         
         if self.swing_active:
-            swing = math.sin(self.swing_timer * 12) * 45
+            swing = math.sin(self.swing_timer * 10) * 50
             glRotatef(swing, 0, 0, 1)
         
         if self.type == MELEE_TYPE:
-            # Elegant Knight's Rapier
-            glColor3f(0.9, 0.9, 1.0)  # Pristine silver
+            # Robotic Plasma Sword
+            glColor3f(0.9, 0.0, 0.0)  # Bright red energy
             glPushMatrix()
-            glScalef(0.06, 1.0, 0.03)
-            glutSolidCube(70)
+            glScalef(0.08, 0.9, 0.04)
+            glutSolidCube(80)
             glPopMatrix()
             
-            # Elegant crossguard
-            glColor3f(0.8, 0.8, 0.9)
-            glPushMatrix()
-            glTranslatef(0, -25, 0)
-            glScalef(0.6, 0.08, 0.06)
-            glutSolidCube(25)
-            glPopMatrix()
+            # Energy crackle effect
+            glColor3f(1.0, 0.3, 0.3)
+            for i in range(5):
+                glPushMatrix()
+                glTranslatef(random.randint(-3, 3), i * 12 - 30, random.randint(-2, 2))
+                glutSolidSphere(2, 6, 6)
+                glPopMatrix()
                 
         elif self.type == BOSS_TYPE:
-            # Majestic Crystal Blade
-            glColor3f(0.7, 0.5, 0.9)  # Royal purple crystal
+            # Ancient Runic Blade
+            glColor3f(0.6, 0.5, 0.2)  # Ancient bronze
             glPushMatrix()
-            glScalef(0.08, 1.3, 0.04)
-            glutSolidCube(80)
+            glScalef(0.12, 1.1, 0.06)
+            glutSolidCube(90)
             glPopMatrix()
             
-            # Ethereal glow
-            glColor3f(0.9, 0.8, 1.0)
-            glPushMatrix()
-            glScalef(0.04, 1.1, 0.02)
-            glutSolidCube(75)
-            glPopMatrix()
+            # Glowing runes
+            glColor3f(1.0, 0.8, 0.0)
+            for i in range(4):
+                glPushMatrix()
+                glTranslatef(0, i * 15 - 30, 0)
+                glutSolidCube(6)
+                glPopMatrix()
         else:
-            # Mage's Elegant Staff
-            glColor3f(0.6, 0.8, 0.9)  # Soft blue
+            # Stealth Energy Blade
+            glColor3f(0.0, 0.8, 1.0)  # Electric blue
             glPushMatrix()
-            glScalef(0.06, 1.0, 0.06)
-            glutSolidCube(80)
-            glPopMatrix()
-            
-            # Crystal orb at tip
-            glPushMatrix()
-            glTranslatef(0, 40, 0)
-            glColor3f(0.9, 0.8, 0.4)
-            glutSolidSphere(8, 12, 12)
+            glScalef(0.05, 0.8, 0.03)
+            glutSolidCube(70)
             glPopMatrix()
         
-        # Refined handle
-        glColor3f(0.3, 0.2, 0.1)
+        # Tech handle
+        glColor3f(0.15, 0.15, 0.2)
         glPushMatrix()
         glTranslatef(0, -40, 0)
-        glScalef(0.12, 0.3, 0.12)
-        glutSolidCube(25)
+        glutSolidCylinder(6, 25, 8, 8)
         glPopMatrix()
         
         glPopMatrix()
@@ -1036,62 +1026,44 @@ class Enemy:
             glRotatef(angle, 0, 0, 1)
         
         if self.type == RANGED_TYPE:
-            # Elegant Crystal Staff
-            glColor3f(0.8, 0.9, 0.95)  # Pristine white-blue
+            # High-tech Energy Rifle
+            glColor3f(0.1, 0.15, 0.2)  # Dark tech
             glPushMatrix()
-            glTranslatef(20, 0, 0)
+            glTranslatef(25, 0, 0)
             glRotatef(90, 0, 1, 0)
-            glutSolidCylinder(4, 60, 12, 12)
+            glutSolidCylinder(6, 50, 8, 8)
             glPopMatrix()
             
-            # Crystal focus at tip
-            glColor3f(0.4, 0.8, 0.9)  # Soft cyan
+            # Energy chamber
+            glColor3f(0.0, 0.6, 1.0)
             glPushMatrix()
-            glTranslatef(45, 0, 0)
-            glutSolidOctahedron()
-            glScalef(12, 12, 12)
-            glPopMatrix()
-            
-            # Elegant grip
-            glColor3f(0.6, 0.7, 0.8)
-            glPushMatrix()
-            glTranslatef(5, 0, 0)
-            glRotatef(90, 0, 1, 0)
-            glutSolidCylinder(6, 20, 8, 8)
+            glTranslatef(10, 0, 0)
+            glutSolidSphere(8, 10, 10)
             glPopMatrix()
             
         elif self.type == BOSS_TYPE:
-            # Majestic Scepter of Power
-            glColor3f(0.7, 0.5, 0.9)  # Royal purple
+            # Ancient War Staff
+            glColor3f(0.3, 0.25, 0.15)  # Ancient wood
             glPushMatrix()
-            glTranslatef(30, 0, 0)
+            glTranslatef(35, 0, 0)
             glRotatef(90, 0, 1, 0)
-            glutSolidCylinder(8, 70, 16, 16)
+            glutSolidCylinder(10, 80, 12, 12)
             glPopMatrix()
             
-            # Majestic crystal crown
-            glColor3f(0.9, 0.7, 1.0)
+            # Golden head piece
+            glColor3f(0.8, 0.6, 0.2)
             glPushMatrix()
-            glTranslatef(55, 0, 0)
-            glutSolidSphere(15, 16, 16)
+            glTranslatef(60, 0, 0)
+            glutSolidSphere(18, 12, 12)
             glPopMatrix()
             
-            # Flowing energy tendrils
-            for i in range(6):
-                glPushMatrix()
-                glTranslatef(55, 0, 0)
-                glRotatef(i * 60 + self.anim_t * 80, 0, 1, 0)
-                glTranslatef(20, 0, 0)
-                glColor3f(0.8, 0.6, 1.0)
-                glutSolidSphere(5, 8, 8)
-                glPopMatrix()
         else:
-            # Refined pistol
-            glColor3f(0.4, 0.4, 0.5)
+            # Standard tech weapon
+            glColor3f(0.3, 0.3, 0.35)
             glPushMatrix()
             glTranslatef(20, 0, 0)
-            glScalef(0.8, 0.1, 0.1)
-            glutSolidCube(40)
+            glScalef(0.7, 0.12, 0.12)
+            glutSolidCube(35)
             glPopMatrix()
         
         glPopMatrix()
@@ -1134,35 +1106,31 @@ class Enemy:
             glTranslatef(b['x'], b['y'], b['z'])
             
             if b['is_special']:
-                # Boss special - elegant crystalline shards
-                glRotatef(time.time() * 150, 1, 1, 1)
-                glColor3f(0.9, 0.7, 1.0)
-                glutSolidOctahedron()
-                glScalef(14, 14, 14)
-                # Soft glow
-                glColor3f(1.0, 0.9, 1.0)
-                glutWireOctahedron()
-                glScalef(1.2, 1.2, 1.2)
+                # Boss ancient magic - glowing runes
+                glRotatef(time.time() * 120, 0, 1, 0)
+                glColor3f(1.0, 0.8, 0.3)
+                glutSolidCube(16)
+                # Outer glow
+                glColor3f(0.8, 0.6, 0.2)
+                glutWireCube(20)
             elif self.type == RANGED_TYPE:
-                # Mage's energy bolt - graceful and mystical
-                glColor3f(0.5, 0.9, 0.9)  # Ethereal cyan
-                glutSolidSphere(6, 12, 12)
-                # Energy trail effect
-                glColor3f(0.3, 0.7, 0.8)
+                # Energy plasma bolt
+                glColor3f(0.2, 0.8, 1.0)
+                glutSolidSphere(8, 10, 10)
+                # Electric trail
+                glColor3f(0.0, 0.4, 0.8)
                 for i in range(3):
                     glPushMatrix()
-                    glTranslatef(-i * 8, 0, 0)
-                    glutSolidSphere(4 - i, 8, 8)
+                    glTranslatef(-i * 6, 0, 0)
+                    glutSolidSphere(6 - i * 2, 6, 6)
                     glPopMatrix()
             elif self.type == MELEE_TYPE:
-                # Knight's throwing blade - refined
-                glRotatef(time.time() * 300, 0, 0, 1)
-                glColor3f(0.8, 0.85, 0.95)
-                glScalef(0.8, 0.1, 0.05)
-                glutSolidCube(20)
+                # Robotic projectile
+                glColor3f(0.8, 0.2, 0.2)
+                glutSolidCube(10)
             else:
-                # Standard refined projectile
-                glColor3f(0.9, 0.9, 0.7)
+                # Standard bullet
+                glColor3f(0.7, 0.7, 0.4)
                 glutSolidSphere(6, 8, 8)
                 
             glPopMatrix()
