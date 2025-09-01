@@ -95,13 +95,6 @@ def draw_all_collectibles():
 def update_collectibles():
     """Update collectible animations and spawning"""
     global collectibles, spawn_timer
-    
-    # Update rotation for animation
-    for collectible in collectibles:
-        collectible[4] += 2  # Rotate 2 degrees per frame
-        if collectible[4] >= 360:
-            collectible[4] = 0
-    
     # Handle spawning
     spawn_timer += 1
     if spawn_timer >= spawn_interval:
