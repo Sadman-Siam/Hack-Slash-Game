@@ -433,10 +433,10 @@ def keyboardListener(key, x, y):
         new_x = player_x + movement_speed * math.sin(angle_rad)
         new_y = player_y - movement_speed * math.cos(angle_rad)
         
-        if -GRID_LENGTH + 100 < new_x < GRID_LENGTH - 100:
+        if not check_obstacle_collision(new_x, new_y) and -GRID_LENGTH + 100 < new_x < GRID_LENGTH - 100:
             player_x = new_x
             character_pos[0] = new_x
-        if -GRID_LENGTH + 100 < new_y < GRID_LENGTH - 100:
+        if not check_obstacle_collision(new_x, new_y) and -GRID_LENGTH + 100 < new_y < GRID_LENGTH - 100:
             player_y = new_y
             character_pos[1] = new_y
             
@@ -445,10 +445,10 @@ def keyboardListener(key, x, y):
         new_x = player_x - movement_speed * math.sin(angle_rad)
         new_y = player_y + movement_speed * math.cos(angle_rad)
         
-        if -GRID_LENGTH + 100 < new_x < GRID_LENGTH - 100:
+        if not check_obstacle_collision(new_x, new_y) and -GRID_LENGTH + 100 < new_x < GRID_LENGTH - 100:
             player_x = new_x
             character_pos[0] = new_x
-        if -GRID_LENGTH + 100 < new_y < GRID_LENGTH - 100:
+        if not check_obstacle_collision(new_x, new_y) and -GRID_LENGTH + 100 < new_y < GRID_LENGTH - 100:
             player_y = new_y
             character_pos[1] = new_y
             
@@ -457,10 +457,10 @@ def keyboardListener(key, x, y):
         new_x = player_x + movement_speed * math.cos(angle_rad)
         new_y = player_y + movement_speed * math.sin(angle_rad)
         
-        if -GRID_LENGTH + 100 < new_x < GRID_LENGTH - 100:
+        if not check_obstacle_collision(new_x, new_y) and -GRID_LENGTH + 100 < new_x < GRID_LENGTH - 100:
             player_x = new_x
             character_pos[0] = new_x
-        if -GRID_LENGTH + 100 < new_y < GRID_LENGTH - 100:
+        if not check_obstacle_collision(new_x, new_y) and -GRID_LENGTH + 100 < new_y < GRID_LENGTH - 100:
             player_y = new_y
             character_pos[1] = new_y
             
@@ -469,10 +469,10 @@ def keyboardListener(key, x, y):
         new_x = player_x - movement_speed * math.cos(angle_rad)
         new_y = player_y - movement_speed * math.sin(angle_rad)
         
-        if -GRID_LENGTH + 100 < new_x < GRID_LENGTH - 100:
+        if not check_obstacle_collision(new_x, new_y) and -GRID_LENGTH + 100 < new_x < GRID_LENGTH - 100:
             player_x = new_x
             character_pos[0] = new_x
-        if -GRID_LENGTH + 100 < new_y < GRID_LENGTH - 100:
+        if not check_obstacle_collision(new_x, new_y) and -GRID_LENGTH + 100 < new_y < GRID_LENGTH - 100:
             player_y = new_y
             character_pos[1] = new_y
             
@@ -506,6 +506,7 @@ def idle():
     """
     Idle function that runs continuously
     """
+    global day_night_cycle
     # Update day/night cycle
     day_night_cycle = (day_night_cycle + 0.0005) % 1.0
 
