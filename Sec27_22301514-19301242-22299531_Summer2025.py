@@ -565,7 +565,7 @@ if __name__ == "__main__":
 
 
 
-# Srizon enemy part
+# Srizon enemy part updated
 
 from OpenGL.GL import *
 from OpenGL.GLUT import *
@@ -588,7 +588,7 @@ RANGED_TYPE = 2
 BOSS_TYPE = 3
 
 class Enemy:
-    def _init_(self, x, y, z, etype):
+    def __init__(self, x, y, z, etype):
         self.x, self.y, self.z = x, y, z
         self.type = etype
         self.hp = 500 if etype == BOSS_TYPE else 100
@@ -813,24 +813,52 @@ class Enemy:
         scale = 1.0 + math.sin(self.anim_t * 4) * 0.2
         
         if self.type == MELEE_TYPE:
-            glColor3f(1.0, 0.2, 0.2)
+            # Warrior - Orange/Red Cube shape
+            glColor3f(1.0, 0.4, 0.0)
             glScalef(scale, scale, scale)
-            glutSolidSphere(self.radius * 0.8, 12, 12)
-        elif self.type == RANGED_TYPE:
-            glColor3f(0.2, 0.2, 1.0)
-            glScalef(scale, scale, scale)
-            glutSolidSphere(self.radius * 0.8, 12, 12)
-        else:
-            glColor3f(0.8, 0.0, 0.8)
-            glScalef(scale, scale, scale)
-            glutSolidSphere(self.radius, 16, 16)
+            glutSolidCube(self.radius * 1.5)
             
-            for i in range(3):
+            # Add spikes for intimidation
+            glColor3f(0.8, 0.2, 0.0)
+            for i in range(4):
                 glPushMatrix()
-                glRotatef(self.anim_t * 50 + i * 120, 0, 0, 1)
-                glTranslatef(self.radius * 1.2, 0, 0)
-                glColor3f(1.0, 0.0, 0.5)
-                glutSolidCube(self.radius * 0.4)
+                glRotatef(i * 90, 0, 0, 1)
+                glTranslatef(self.radius * 0.9, 0, 0)
+                glutSolidCone(8, 20, 6, 6)
+                glPopMatrix()
+                
+        elif self.type == RANGED_TYPE:
+            # Archer - Green Cylinder shape
+            glColor3f(0.0, 0.8, 0.2)
+            glScalef(scale, scale, scale)
+            glRotatef(90, 1, 0, 0)
+            glutSolidCylinder(self.radius * 0.8, self.radius * 1.2, 12, 12)
+            
+            # Add rotating rings
+            glColor3f(0.0, 1.0, 0.4)
+            for i in range(2):
+                glPushMatrix()
+                glRotatef(self.anim_t * 100 + i * 180, 0, 1, 0)
+                glTranslatef(self.radius, 0, 0)
+                glutSolidTorus(5, 15, 8, 12)
+                glPopMatrix()
+                
+        else:
+            # Boss - Purple Diamond/Octahedron shape
+            glColor3f(0.6, 0.0, 0.8)
+            glScalef(scale, scale, scale)
+            glutSolidOctahedron()
+            glScalef(self.radius * 0.03, self.radius * 0.03, self.radius * 0.03)
+            
+            # Orbiting crystals
+            for i in range(6):
+                glPushMatrix()
+                glRotatef(self.anim_t * 30 + i * 60, 0, 0, 1)
+                glTranslatef(self.radius * 1.5, 0, 0)
+                glRotatef(self.anim_t * 200, 1, 1, 0)
+                glColor3f(0.9, 0.0, 0.9)
+                glutSolidTetrahedron()
+                glScalef(20, 20, 20)
                 glPopMatrix()
         
         self.draw_current_weapon()
@@ -853,24 +881,50 @@ class Enemy:
             swing = math.sin(self.swing_timer * 15) * 60
             glRotatef(swing, 0, 0, 1)
         
-        glColor3f(0.8, 0.8, 0.9)
-        glPushMatrix()
-        glScalef(0.1, 0.8, 0.05)
-        glutSolidCube(60)
-        glPopMatrix()
+        if self.type == MELEE_TYPE:
+            # Warrior's Heavy Blade
+            glColor3f(0.9, 0.1, 0.1)  # Red blade
+            glPushMatrix()
+            glScalef(0.15, 1.0, 0.08)
+            glutSolidCube(60)
+            glPopMatrix()
+            
+            # Serrated edge
+            glColor3f(1.0, 0.0, 0.0)
+            for i in range(-3, 4):
+                glPushMatrix()
+                glTranslatef(8, i * 8, 0)
+                glutSolidCone(3, 8, 4, 4)
+                glPopMatrix()
+                
+        elif self.type == BOSS_TYPE:
+            # Boss's Crystal Sword
+            glColor3f(0.8, 0.0, 0.8)  # Purple crystal
+            glPushMatrix()
+            glScalef(0.12, 1.2, 0.06)
+            glutSolidCube(70)
+            glPopMatrix()
+            
+            # Glowing effect
+            glColor3f(1.0, 0.5, 1.0)
+            glPushMatrix()
+            glScalef(0.08, 1.0, 0.04)
+            glutSolidCube(65)
+            glPopMatrix()
+        else:
+            # Default sword for ranged enemies
+            glColor3f(0.0, 0.8, 0.0)
+            glPushMatrix()
+            glScalef(0.1, 0.8, 0.05)
+            glutSolidCube(60)
+            glPopMatrix()
         
-        glColor3f(0.6, 0.3, 0.1)
+        # Handle (common for all)
+        glColor3f(0.4, 0.2, 0.0)
         glPushMatrix()
-        glTranslatef(0, -30, 0)
-        glScalef(0.15, 0.3, 0.1)
-        glutSolidCube(40)
-        glPopMatrix()
-        
-        glColor3f(1.0, 0.8, 0.0)
-        glPushMatrix()
-        glTranslatef(0, -15, 0)
-        glScalef(0.4, 0.05, 0.1)
-        glutSolidCube(30)
+        glTranslatef(0, -35, 0)
+        glScalef(0.2, 0.4, 0.15)
+        glutSolidCube(35)
         glPopMatrix()
         
         glPopMatrix()
@@ -885,26 +939,62 @@ class Enemy:
             angle = math.degrees(math.atan2(dy, dx))
             glRotatef(angle, 0, 0, 1)
         
-        glColor3f(0.3, 0.3, 0.3)
-        glPushMatrix()
-        glTranslatef(20, 0, 0)
-        glScalef(0.8, 0.1, 0.1)
-        glutSolidCube(40)
-        glPopMatrix()
-        
-        glColor3f(0.1, 0.1, 0.1)
-        glPushMatrix()
-        glScalef(0.4, 0.2, 0.15)
-        glutSolidCube(35)
-        glPopMatrix()
-        
-        glColor3f(0.4, 0.2, 0.1)
-        glPushMatrix()
-        glTranslatef(-5, -10, 0)
-        glRotatef(-30, 0, 0, 1)
-        glScalef(0.1, 0.3, 0.1)
-        glutSolidCube(25)
-        glPopMatrix()
+        if self.type == RANGED_TYPE:
+            # Archer's Crossbow
+            glColor3f(0.0, 0.6, 0.0)  # Green wood
+            glPushMatrix()
+            glTranslatef(15, 0, 0)
+            glScalef(0.6, 0.08, 0.08)
+            glutSolidCube(50)
+            glPopMatrix()
+            
+            # Crossbow arms
+            glColor3f(0.0, 0.8, 0.2)
+            glPushMatrix()
+            glTranslatef(25, 0, 0)
+            glRotatef(45, 0, 0, 1)
+            glScalef(0.6, 0.05, 0.05)
+            glutSolidCube(40)
+            glPopMatrix()
+            
+            glPushMatrix()
+            glTranslatef(25, 0, 0)
+            glRotatef(-45, 0, 0, 1)
+            glScalef(0.6, 0.05, 0.05)
+            glutSolidCube(40)
+            glPopMatrix()
+            
+        elif self.type == BOSS_TYPE:
+            # Boss's Energy Cannon
+            glColor3f(0.4, 0.0, 0.6)  # Purple energy
+            glPushMatrix()
+            glTranslatef(25, 0, 0)
+            glRotatef(90, 0, 1, 0)
+            glutSolidCylinder(15, 50, 8, 8)
+            glPopMatrix()
+            
+            # Energy core
+            glColor3f(1.0, 0.0, 1.0)
+            glPushMatrix()
+            glutSolidSphere(12, 8, 8)
+            glPopMatrix()
+            
+            # Pulsing rings
+            for i in range(3):
+                glPushMatrix()
+                glTranslatef(10 + i * 15, 0, 0)
+                glRotatef(90, 0, 1, 0)
+                glColor3f(0.8, 0.0, 0.8)
+                glutWireTorus(3, 8, 6, 12)
+                glPopMatrix()
+        else:
+            # Default pistol
+            glColor3f(0.2, 0.2, 0.2)
+            glPushMatrix()
+            glTranslatef(20, 0, 0)
+            glScalef(0.8, 0.1, 0.1)
+            glutSolidCube(40)
+            glPopMatrix()
         
         glPopMatrix()
 
@@ -946,11 +1036,24 @@ class Enemy:
             glTranslatef(b['x'], b['y'], b['z'])
             
             if b['is_special']:
+                # Boss special bullets - rotating diamonds
+                glRotatef(time.time() * 200, 1, 1, 1)
                 glColor3f(1.0, 0.0, 1.0)
-                glutSolidCube(16)
+                glutSolidOctahedron()
+                glScalef(12, 12, 12)
+            elif self.type == RANGED_TYPE:
+                # Archer arrows - elongated
+                glColor3f(0.0, 1.0, 0.0)
+                glRotatef(90, 0, 1, 0)
+                glutSolidCylinder(3, 20, 6, 6)
+                # Arrow tip
+                glTranslatef(0, 0, 20)
+                glColor3f(0.8, 0.8, 0.8)
+                glutSolidCone(5, 10, 6, 6)
             else:
-                glColor3f(1.0, 1.0, 0.0)
-                glutSolidCube(12)
+                # Regular bullets
+                glColor3f(1.0, 0.8, 0.0)
+                glutSolidSphere(8, 6, 6)
                 
             glPopMatrix()
 
@@ -989,7 +1092,7 @@ def damage_at_pos(x, y, dmg, splash_radius=50):
     for e in enemy_list + boss_list:
         if e.dead:
             continue
-        dist = math.sqrt((e.x - x)*2 + (e.y - y)*2)
+        dist = math.sqrt((e.x - x)**2 + (e.y - y)**2)
         if dist <= splash_radius:
             e.hurt(dmg)
 
@@ -1037,15 +1140,17 @@ def display():
     setup_camera()
     glEnable(GL_DEPTH_TEST)
     
+    # Ground
     glBegin(GL_QUADS)
-    glColor3f(0.3, 0.3, 0.3)
+    glColor3f(0.2, 0.2, 0.3)  # Darker ground
     glVertex3f(-grid_size, grid_size, 0)
     glVertex3f(grid_size, grid_size, 0)
     glVertex3f(grid_size, -grid_size, 0)
     glVertex3f(-grid_size, -grid_size, 0)
     glEnd()
     
-    glColor3f(0.5, 0.5, 0.5)
+    # Grid lines
+    glColor3f(0.4, 0.4, 0.5)
     glBegin(GL_LINES)
     for i in range(-grid_size, grid_size + 1, 100):
         glVertex3f(i, -grid_size, 1)
@@ -1054,6 +1159,7 @@ def display():
         glVertex3f(grid_size, i, 1)
     glEnd()
     
+    # Target dummy
     demo_pos = [
         math.cos(now * 0.3) * 200,
         math.sin(now * 0.3) * 200,
@@ -1061,8 +1167,8 @@ def display():
     ]
     glPushMatrix()
     glTranslatef(demo_pos[0], demo_pos[1], 10)
-    glColor3f(0.3, 0.3, 0.3)
-    glutWireSphere(30, 8, 8)
+    glColor3f(0.8, 0.8, 0.0)  # Yellow target
+    glutSolidSphere(30, 8, 8)
     glPopMatrix()
     
     tick_all_enemies(dt)
@@ -1075,11 +1181,12 @@ def main():
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
     glutInitWindowSize(1000, 800)
     glutInitWindowPosition(0, 0)
-    window = glutCreateWindow(b"Enemy Demo")
+    window = glutCreateWindow(b"Enhanced Enemy Demo")
 
     spawn_enemies()
     
     glEnable(GL_DEPTH_TEST)
+    glClearColor(0.1, 0.1, 0.15, 1.0)  # Dark blue background
     
     glutDisplayFunc(display)
     glutKeyboardFunc(on_key)
@@ -1089,5 +1196,5 @@ def main():
 
     glutMainLoop()
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     main()
