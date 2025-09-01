@@ -327,6 +327,17 @@ def mouseListener(button, state, x, y):
 
     glutPostRedisplay()
 
+def passiveMouseListener(x, y):
+    global player_rotation
+    
+    center_x = glutGet(GLUT_WINDOW_WIDTH) / 2.0
+    
+    normalized_x = (x - center_x) / center_x
+    
+    player_rotation = normalized_x * -180
+    
+    glutPostRedisplay()
+
 def setupCamera():
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
@@ -527,7 +538,7 @@ def showScreen():
     draw_text(600, 480, f"S - Move Backward")
     draw_text(600, 460, f"A - Strafe Left")
     draw_text(600, 440, f"D - Strafe Right")
-    draw_text(600, 420, f"Arrow Keys - Rotate")
+    draw_text(600, 420, f"Mouse - Rotate")
     draw_text(600, 400, f"Q - Switch Weapon")
     draw_text(600, 380, f"C - Switch Camera View")
     draw_text(600, 360, f"Left Click - Shoot/Slash")
@@ -1053,6 +1064,7 @@ def main():
     glutKeyboardFunc(keyboardListener)
     glutSpecialFunc(specialKeyListener)
     glutMouseFunc(mouseListener)
+    glutPassiveMotionFunc(passiveMouseListener)
     glutIdleFunc(idle)
 
     for _ in range(3):
