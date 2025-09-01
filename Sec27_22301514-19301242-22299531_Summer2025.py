@@ -556,3 +556,529 @@ def main():
 
 if __name__ == "__main__":
     main()
+# Srizon enemy part
+
+from OpenGL.GL import *
+from OpenGL.GLUT import *
+from OpenGL.GLU import *
+import math
+import random
+import time
+
+cam_x, cam_y, cam_z = 0, 500, 500
+fov = 120
+grid_size = 600
+
+last_frame = time.time()
+enemy_list = []
+boss_list = []
+MAX_ENEMIES = 5
+
+MELEE_TYPE = 1
+RANGED_TYPE = 2
+BOSS_TYPE = 3
+
+class Enemy:
+    def _init_(self, x, y, z, etype):
+        self.x, self.y, self.z = x, y, z
+        self.type = etype
+        self.hp = 500 if etype == BOSS_TYPE else 100
+        self.max_hp = self.hp
+        self.move_speed = 1.0 if etype == BOSS_TYPE else (2.0 if etype == MELEE_TYPE else 1.5)
+        self.dead = False
+        self.anim_t = 0
+        self.spawn_x, self.spawn_y = x, y
+        self.current_state = "wandering"
+        self.radius = 80 if etype == BOSS_TYPE else 40
+        
+        self.weapon = "sword"
+        self.sword_reach = 100 if etype == BOSS_TYPE else 80
+        self.gun_reach = 400 if etype == BOSS_TYPE else 300
+        self.sword_dmg = 60 if etype == BOSS_TYPE else 30
+        self.gun_dmg = 40 if etype == BOSS_TYPE else 20
+        self.sword_delay = 0.5 if etype == BOSS_TYPE else 0.8
+        self.gun_delay = 1.0 if etype == BOSS_TYPE else 1.5
+        self.last_shot = 0
+        self.swing_active = False
+        self.swing_timer = 0
+        
+        if etype == BOSS_TYPE:
+            self.special_delay = 5.0
+            self.last_special = 0
+        
+        self.bullets = []
+        self.patrol_angle = random.random() * 6.28
+        self.wander_dist = 100
+        self.dummy_target = [0, 0, 0]
+
+    def tick(self, dt):
+        if self.dead:
+            return
+            
+        self.anim_t += dt
+        now = time.time()
+        
+        self.patrol_angle += dt * 0.5
+        
+        self.dummy_target[0] = math.cos(now * 0.3) * 200
+        self.dummy_target[1] = math.sin(now * 0.3) * 200
+        self.dummy_target[2] = 0
+        
+        dist = self.get_dist(self.dummy_target)
+        
+        if dist <= self.sword_reach:
+            self.weapon = "sword"
+        elif dist <= self.gun_reach:
+            self.weapon = "gun"
+        else:
+            self.weapon = "gun"
+        
+        if self.swing_active:
+            self.swing_timer += dt
+            if self.swing_timer > 0.5:
+                self.swing_active = False
+                self.swing_timer = 0
+        
+        self.do_ai_stuff(dt, dist, now)
+        self.update_bullets(dt)
+
+    def get_dist(self, target):
+        dx = self.x - target[0]
+        dy = self.y - target[1]
+        return math.sqrt(dx*dx + dy*dy)
+
+    def do_ai_stuff(self, dt, dist, now):
+        if self.type == MELEE_TYPE:
+            if dist < 350:
+                self.current_state = "hunting"
+                if dist > self.sword_reach and self.weapon == "sword":
+                    dx = self.dummy_target[0] - self.x
+                    dy = self.dummy_target[1] - self.y
+                    length = math.sqrt(dx*dx + dy*dy)
+                    if length > 0:
+                        self.x += (dx/length) * self.move_speed * dt * 60
+                        self.y += (dy/length) * self.move_speed * dt * 60
+                else:
+                    self.current_state = "fighting"
+                    delay = self.sword_delay if self.weapon == "sword" else self.gun_delay
+                    if now - self.last_shot > delay:
+                        self.do_attack()
+                        self.last_shot = now
+            else:
+                self.current_state = "wandering"
+                self.wander_around(dt)
+        
+        elif self.type == RANGED_TYPE:
+            if dist < 400:
+                if dist <= self.sword_reach and self.weapon == "sword":
+                    self.current_state = "fighting"
+                    if now - self.last_shot > self.sword_delay:
+                        self.sword_swing()
+                        self.last_shot = now
+                elif dist <= self.gun_reach and self.weapon == "gun":
+                    self.current_state = "fighting"
+                    if now - self.last_shot > self.gun_delay:
+                        self.shoot_gun()
+                        self.last_shot = now
+                else:
+                    self.current_state = "positioning"
+                    good_range = self.gun_reach * 0.7
+                    if dist < good_range:
+                        dx = self.x - self.dummy_target[0]
+                        dy = self.y - self.dummy_target[1]
+                        length = math.sqrt(dx*dx + dy*dy)
+                        if length > 0:
+                            self.x += (dx/length) * self.move_speed * dt * 40
+                            self.y += (dy/length) * self.move_speed * dt * 40
+                    else:
+                        dx = self.dummy_target[0] - self.x
+                        dy = self.dummy_target[1] - self.y
+                        length = math.sqrt(dx*dx + dy*dy)
+                        if length > 0:
+                            self.x += (dx/length) * self.move_speed * dt * 40
+                            self.y += (dy/length) * self.move_speed * dt * 40
+            else:
+                self.current_state = "wandering"
+                self.wander_around(dt)
+        
+        elif self.type == BOSS_TYPE:
+            if dist < 500:
+                if dist > self.sword_reach:
+                    self.current_state = "hunting"
+                    dx = self.dummy_target[0] - self.x
+                    dy = self.dummy_target[1] - self.y
+                    length = math.sqrt(dx*dx + dy*dy)
+                    if length > 0:
+                        self.x += (dx/length) * self.move_speed * dt * 60
+                        self.y += (dy/length) * self.move_speed * dt * 60
+                
+                self.current_state = "fighting"
+                delay = self.sword_delay if self.weapon == "sword" else self.gun_delay
+                if now - self.last_shot > delay:
+                    if self.weapon == "sword":
+                        self.sword_swing()
+                    else:
+                        self.shoot_gun()
+                    self.last_shot = now
+                
+                if now - self.last_special > self.special_delay:
+                    self.boss_special()
+                    self.last_special = now
+
+    def wander_around(self, dt):
+        angle = self.patrol_angle
+        target_x = self.spawn_x + math.cos(angle) * self.wander_dist
+        target_y = self.spawn_y + math.sin(angle) * self.wander_dist
+        
+        dx = target_x - self.x
+        dy = target_y - self.y
+        length = math.sqrt(dx*dx + dy*dy)
+        if length > 5:
+            self.x += (dx/length) * self.move_speed * dt * 30
+            self.y += (dy/length) * self.move_speed * dt * 30
+
+    def do_attack(self):
+        if self.weapon == "sword":
+            self.sword_swing()
+        else:
+            self.shoot_gun()
+
+    def sword_swing(self):
+        self.swing_active = True
+        self.swing_timer = 0
+
+    def shoot_gun(self):
+        dx = self.dummy_target[0] - self.x
+        dy = self.dummy_target[1] - self.y
+        length = math.sqrt(dx*dx + dy*dy)
+        if length > 0:
+            vel_x = dx/length * 250
+            vel_y = dy/length * 250
+            bullet = {
+                'x': self.x, 'y': self.y, 'z': self.z + 20,
+                'vx': vel_x, 'vy': vel_y,
+                'life': 4.0, 'dmg': self.gun_dmg,
+                'is_special': False
+            }
+            self.bullets.append(bullet)
+
+    def boss_special(self):
+        if self.type == BOSS_TYPE:
+            self.swing_active = True
+            for i in range(0, 360, 20):
+                angle = math.radians(i)
+                vel_x = math.cos(angle) * 200
+                vel_y = math.sin(angle) * 200
+                bullet = {
+                    'x': self.x, 'y': self.y, 'z': self.z + 20,
+                    'vx': vel_x, 'vy': vel_y,
+                    'life': 5.0, 'dmg': self.gun_dmg,
+                    'is_special': True
+                }
+                self.bullets.append(bullet)
+
+    def update_bullets(self, dt):
+        for bullet in self.bullets[:]:
+            bullet['x'] += bullet['vx'] * dt
+            bullet['y'] += bullet['vy'] * dt
+            bullet['life'] -= dt
+            
+            if bullet['life'] <= 0:
+                self.bullets.remove(bullet)
+
+    def hurt(self, damage):
+        self.hp -= damage
+        if self.hp <= 0:
+            self.dead = True
+
+    def render(self):
+        if self.dead:
+            return
+
+        glPushMatrix()
+        glTranslatef(self.x, self.y, self.z)
+        
+        bob = math.sin(self.anim_t * 3) * 5
+        glTranslatef(0, 0, bob)
+        
+        scale = 1.0 + math.sin(self.anim_t * 4) * 0.2
+        
+        if self.type == MELEE_TYPE:
+            glColor3f(1.0, 0.2, 0.2)
+            glScalef(scale, scale, scale)
+            glutSolidSphere(self.radius * 0.8, 12, 12)
+        elif self.type == RANGED_TYPE:
+            glColor3f(0.2, 0.2, 1.0)
+            glScalef(scale, scale, scale)
+            glutSolidSphere(self.radius * 0.8, 12, 12)
+        else:
+            glColor3f(0.8, 0.0, 0.8)
+            glScalef(scale, scale, scale)
+            glutSolidSphere(self.radius, 16, 16)
+            
+            for i in range(3):
+                glPushMatrix()
+                glRotatef(self.anim_t * 50 + i * 120, 0, 0, 1)
+                glTranslatef(self.radius * 1.2, 0, 0)
+                glColor3f(1.0, 0.0, 0.5)
+                glutSolidCube(self.radius * 0.4)
+                glPopMatrix()
+        
+        self.draw_current_weapon()
+        glPopMatrix()
+        
+        self.draw_hp_bar()
+        self.draw_bullets()
+
+    def draw_current_weapon(self):
+        if self.weapon == "sword":
+            self.draw_sword()
+        else:
+            self.draw_gun()
+    
+    def draw_sword(self):
+        glPushMatrix()
+        glTranslatef(self.radius * 0.7, 0, 0)
+        
+        if self.swing_active:
+            swing = math.sin(self.swing_timer * 15) * 60
+            glRotatef(swing, 0, 0, 1)
+        
+        glColor3f(0.8, 0.8, 0.9)
+        glPushMatrix()
+        glScalef(0.1, 0.8, 0.05)
+        glutSolidCube(60)
+        glPopMatrix()
+        
+        glColor3f(0.6, 0.3, 0.1)
+        glPushMatrix()
+        glTranslatef(0, -30, 0)
+        glScalef(0.15, 0.3, 0.1)
+        glutSolidCube(40)
+        glPopMatrix()
+        
+        glColor3f(1.0, 0.8, 0.0)
+        glPushMatrix()
+        glTranslatef(0, -15, 0)
+        glScalef(0.4, 0.05, 0.1)
+        glutSolidCube(30)
+        glPopMatrix()
+        
+        glPopMatrix()
+    
+    def draw_gun(self):
+        glPushMatrix()
+        glTranslatef(self.radius * 0.6, 0, 10)
+        
+        dx = self.dummy_target[0] - self.x
+        dy = self.dummy_target[1] - self.y
+        if dx != 0 or dy != 0:
+            angle = math.degrees(math.atan2(dy, dx))
+            glRotatef(angle, 0, 0, 1)
+        
+        glColor3f(0.3, 0.3, 0.3)
+        glPushMatrix()
+        glTranslatef(20, 0, 0)
+        glScalef(0.8, 0.1, 0.1)
+        glutSolidCube(40)
+        glPopMatrix()
+        
+        glColor3f(0.1, 0.1, 0.1)
+        glPushMatrix()
+        glScalef(0.4, 0.2, 0.15)
+        glutSolidCube(35)
+        glPopMatrix()
+        
+        glColor3f(0.4, 0.2, 0.1)
+        glPushMatrix()
+        glTranslatef(-5, -10, 0)
+        glRotatef(-30, 0, 0, 1)
+        glScalef(0.1, 0.3, 0.1)
+        glutSolidCube(25)
+        glPopMatrix()
+        
+        glPopMatrix()
+
+    def draw_hp_bar(self):
+        if self.dead:
+            return
+            
+        glPushMatrix()
+        glTranslatef(self.x, self.y, self.z + self.radius + 30)
+        
+        glColor3f(0.2, 0.2, 0.2)
+        glBegin(GL_QUADS)
+        glVertex3f(-25, -3, 0)
+        glVertex3f(25, -3, 0)
+        glVertex3f(25, 3, 0)
+        glVertex3f(-25, 3, 0)
+        glEnd()
+        
+        hp_pct = self.hp / self.max_hp
+        if hp_pct > 0.6:
+            glColor3f(0.0, 1.0, 0.0)
+        elif hp_pct > 0.3:
+            glColor3f(1.0, 1.0, 0.0)
+        else:
+            glColor3f(1.0, 0.0, 0.0)
+            
+        glBegin(GL_QUADS)
+        glVertex3f(-25, -2, 1)
+        glVertex3f(-25 + 50 * hp_pct, -2, 1)
+        glVertex3f(-25 + 50 * hp_pct, 2, 1)
+        glVertex3f(-25, 2, 1)
+        glEnd()
+        
+        glPopMatrix()
+
+    def draw_bullets(self):
+        for b in self.bullets:
+            glPushMatrix()
+            glTranslatef(b['x'], b['y'], b['z'])
+            
+            if b['is_special']:
+                glColor3f(1.0, 0.0, 1.0)
+                glutSolidCube(16)
+            else:
+                glColor3f(1.0, 1.0, 0.0)
+                glutSolidCube(12)
+                
+            glPopMatrix()
+
+def spawn_enemies():
+    global enemy_list, boss_list
+    enemy_list = []
+    boss_list = []
+    
+    for i in range(MAX_ENEMIES):
+        x = random.randint(-400, 400)
+        y = random.randint(-400, 400)
+        
+        if i < 2:
+            enemy_list.append(Enemy(x, y, 30, MELEE_TYPE))
+        elif i < 4:
+            enemy_list.append(Enemy(x, y, 30, RANGED_TYPE))
+        else:
+            boss_list.append(Enemy(x, y, 50, BOSS_TYPE))
+
+def tick_all_enemies(dt):
+    for e in enemy_list:
+        e.tick(dt)
+    for b in boss_list:
+        b.tick(dt)
+
+def render_all_enemies():
+    for e in enemy_list:
+        e.render()
+    for b in boss_list:
+        b.render()
+
+def get_enemies():
+    return enemy_list + boss_list
+
+def damage_at_pos(x, y, dmg, splash_radius=50):
+    for e in enemy_list + boss_list:
+        if e.dead:
+            continue
+        dist = math.sqrt((e.x - x)*2 + (e.y - y)*2)
+        if dist <= splash_radius:
+            e.hurt(dmg)
+
+def on_key(key, x, y):
+    if key == b'r':
+        spawn_enemies()
+
+def on_special_key(key, x, y):
+    global cam_x, cam_y, cam_z
+    
+    if key == GLUT_KEY_LEFT:
+        cam_x -= 10
+    elif key == GLUT_KEY_RIGHT:
+        cam_x += 10
+    elif key == GLUT_KEY_UP:
+        cam_z += 10
+    elif key == GLUT_KEY_DOWN:
+        cam_z -= 10
+
+def on_mouse(button, state, x, y):
+    pass
+
+def setup_camera():
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
+    gluPerspective(fov, 1.25, 0.1, 1500)
+    glMatrixMode(GL_MODELVIEW)
+    glLoadIdentity()
+    gluLookAt(cam_x, cam_y, cam_z, 0, 0, 0, 0, 0, 1)
+
+def animate():
+    glutPostRedisplay()
+
+def display():
+    global last_frame
+    
+    now = time.time()
+    dt = now - last_frame
+    last_frame = now
+    
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    glLoadIdentity()
+    glViewport(0, 0, 1000, 800)
+    
+    setup_camera()
+    glEnable(GL_DEPTH_TEST)
+    
+    glBegin(GL_QUADS)
+    glColor3f(0.3, 0.3, 0.3)
+    glVertex3f(-grid_size, grid_size, 0)
+    glVertex3f(grid_size, grid_size, 0)
+    glVertex3f(grid_size, -grid_size, 0)
+    glVertex3f(-grid_size, -grid_size, 0)
+    glEnd()
+    
+    glColor3f(0.5, 0.5, 0.5)
+    glBegin(GL_LINES)
+    for i in range(-grid_size, grid_size + 1, 100):
+        glVertex3f(i, -grid_size, 1)
+        glVertex3f(i, grid_size, 1)
+        glVertex3f(-grid_size, i, 1)
+        glVertex3f(grid_size, i, 1)
+    glEnd()
+    
+    demo_pos = [
+        math.cos(now * 0.3) * 200,
+        math.sin(now * 0.3) * 200,
+        0
+    ]
+    glPushMatrix()
+    glTranslatef(demo_pos[0], demo_pos[1], 10)
+    glColor3f(0.3, 0.3, 0.3)
+    glutWireSphere(30, 8, 8)
+    glPopMatrix()
+    
+    tick_all_enemies(dt)
+    render_all_enemies()
+    
+    glutSwapBuffers()
+
+def main():
+    glutInit()
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
+    glutInitWindowSize(1000, 800)
+    glutInitWindowPosition(0, 0)
+    window = glutCreateWindow(b"Enemy Demo")
+
+    spawn_enemies()
+    
+    glEnable(GL_DEPTH_TEST)
+    
+    glutDisplayFunc(display)
+    glutKeyboardFunc(on_key)
+    glutSpecialFunc(on_special_key)
+    glutMouseFunc(on_mouse)
+    glutIdleFunc(animate)
+
+    glutMainLoop()
+
+if _name_ == "_main_":
+    main()
