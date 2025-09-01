@@ -23,6 +23,13 @@ player_x = 0
 player_y = 0 
 player_z = 50
 movement_speed = 20.0
+base_movement_speed = 20.0  # Base speed to reset to
+max_movement_speed = 50.0   # Maximum speed limit
+
+# Player stats
+player_health = 100
+max_health = 200
+
 # Player rotation and weapon variables
 player_rotation = 0  # Player's rotation angle in degrees
 current_weapon = "gun"  # Current weapon: "gun" or "sword"
@@ -32,11 +39,107 @@ bullets = []  # List to store active bullets
 bullet_speed = 15.0
 bullet_size = 5
 
-#Sword
+# Sword
 sword_swing_active = False
 sword_swing_timer = 0
 sword_swing_angle = 90
 sword_swing_speed = 8
+
+# Collectibles system
+collectibles = []  # List to store collectible cubes
+collectible_size = 25
+max_collectibles = 2  # Maximum number of collectibles on map
+spawn_timer = 0
+spawn_interval = 300  # Frames between spawn attempts (5 seconds)
+
+def spawn_collectible():
+    """Spawn a random collectible on the map"""
+    global collectibles
+    
+    if len(collectibles) < max_collectibles:
+        # Choose random position within grid bounds
+        x = random.randint(-GRID_LENGTH + 100, GRID_LENGTH - 100)
+        y = random.randint(-GRID_LENGTH + 100, GRID_LENGTH - 100)
+        z = collectible_size  # Place on ground level
+        
+        # Choose type: 'health' (green) or 'speed' (red)
+        cube_type = random.choice(['health', 'speed'])
+        
+        # Store as [x, y, z, type]
+        collectibles.append([x, y, z, cube_type])
+
+def draw_collectible(x, y, z, cube_type):
+    """Draw a simple collectible cube"""
+    glPushMatrix()
+    
+    # Position the cube
+    glTranslatef(x, y, z)
+    
+    # Set color based on type
+    if cube_type == 'health':
+        glColor3f(0, 1, 0)  # Green for health
+    elif cube_type == 'speed':
+        glColor3f(1, 0, 0)  # Red for speed
+    
+    # Draw the cube
+    glutSolidCube(collectible_size)
+    
+    glPopMatrix()
+
+def draw_all_collectibles():
+    """Draw all collectibles on the map"""
+    for collectible in collectibles:
+        x, y, z, cube_type, rotation = collectible
+        draw_collectible(x, y, z, cube_type, rotation)
+
+def update_collectibles():
+    """Update collectible animations and spawning"""
+    global collectibles, spawn_timer
+    
+    # Update rotation for animation
+    for collectible in collectibles:
+        collectible[4] += 2  # Rotate 2 degrees per frame
+        if collectible[4] >= 360:
+            collectible[4] = 0
+    
+    # Handle spawning
+    spawn_timer += 1
+    if spawn_timer >= spawn_interval:
+        spawn_collectible()
+        spawn_timer = 0
+
+def check_collectible_collision():
+    """Check if player collides with any collectibles"""
+    global collectibles, player_health, movement_speed
+    
+    player_collision_radius = 60  # Player collision radius
+    
+    for i, collectible in enumerate(collectibles):
+        x, y, z, cube_type, rotation = collectible
+        
+        # Calculate distance between player and collectible
+        dx = player_x - x
+        dy = player_y - y
+        distance = math.sqrt(dx*dx + dy*dy)
+        
+        # Check collision
+        if distance < (player_collision_radius + collectible_size/2):
+            # Collision detected!
+            if cube_type == 'health':
+                # Add health
+                health_gain = 25
+                player_health = min(player_health + health_gain, max_health)
+                print(f"Health collected! +{health_gain} HP (Current: {player_health})")
+                
+            elif cube_type == 'speed':
+                # Increase movement speed
+                speed_boost = 5.0
+                movement_speed = min(movement_speed + speed_boost, max_movement_speed)
+                print(f"Speed boost collected! +{speed_boost} speed (Current: {movement_speed:.1f})")
+            
+            # Remove the collected cube
+            collectibles.pop(i)
+            break  # Exit loop to avoid index issues
 
 def draw_text(x, y, text):
     glColor3f(1,1,1)
@@ -193,48 +296,8 @@ def update_sword_swing():
             sword_swing_timer = 0
             sword_swing_angle = 90  # Reset to default position
 
-def alternative_sword_swing():
-    """Alternative swing implementation using different rotation axis"""
-    global sword_swing_active, sword_swing_timer, sword_swing_angle
-    
-    if sword_swing_active:
-        sword_swing_timer += 1
-        swing_duration = 25
-        
-        if sword_swing_timer <= swing_duration:
-            # Try swinging around Z-axis instead
-            progress = sword_swing_timer / swing_duration
-            # Swing from 0° to 90° and back
-            if progress <= 0.5:
-                sword_swing_angle = 90 * (progress * 2)
-            else:
-                sword_swing_angle = 90 - (90 * ((progress - 0.5) * 2))
-        else:
-            sword_swing_active = False
-            sword_swing_timer = 0
-            sword_swing_angle = 90
-
-def simple_sword_swing():
-    """Very simple sword swing for testing"""
-    global sword_swing_active, sword_swing_timer, sword_swing_angle
-    
-    if sword_swing_active:
-        sword_swing_timer += 1
-        print(f"Simple swing timer: {sword_swing_timer}")
-        
-        # Just make the sword swing back and forth
-        if sword_swing_timer < 15:
-            sword_swing_angle = 90 + sword_swing_timer * 6  # Swing one way
-        elif sword_swing_timer < 30:
-            sword_swing_angle = 180 - (sword_swing_timer - 15) * 6  # Swing back
-        else:
-            print("Simple swing completed!")
-            sword_swing_active = False
-            sword_swing_timer = 0
-            sword_swing_angle = 90
-
 def shoot_bullet():
-    global bullets, player_x, player_y, player_z, player_rotation, bullets_fired, max_bullets, game_over, is_dying
+    global bullets, player_x, player_y, player_z, player_rotation
 
     angle_rad = math.radians(player_rotation)
     gun_offset_x = 50 * math.sin(angle_rad)
@@ -387,6 +450,12 @@ def idle():
     # Update sword swing animation
     update_sword_swing()
     
+    # Update collectibles
+    update_collectibles()
+    
+    # Check for collectible collisions
+    check_collectible_collision()
+    
     # Ensure the screen updates with the latest changes
     glutPostRedisplay()
 
@@ -443,22 +512,30 @@ def showScreen():
     # Draw bullets
     draw_all_bullets()
 
+    # Draw collectibles
+    draw_all_collectibles()
 
     # Display game info text at a fixed screen position
     draw_text(600, 660, f"Position: ({character_pos[0]:.0f}, {character_pos[1]:.0f})")
     draw_text(600, 640, f"Rotation: {player_rotation:.0f}°")
     draw_text(600, 620, f"Weapon: {current_weapon.upper()}")
-    draw_text(600, 600, f"Bullets: {len(bullets)}")
-    draw_text(600, 580, f"Controls:")
-    draw_text(600, 560, f"W - Move Forward")
-    draw_text(600, 540, f"S - Move Backward")
-    draw_text(600, 520, f"A - Strafe Left")
-    draw_text(600, 500, f"D - Strafe Right")
-    draw_text(600, 480, f"Arrow Keys - Rotate")
-    draw_text(600, 460, f"Q - Switch Weapon")
-    draw_text(600, 440, f"Left Click - Shoot/Slash")
-    draw_text(600, 420, f"Right Click - Sword Swing")
+    draw_text(600, 600, f"Health: {player_health}/{max_health}")
+    draw_text(600, 580, f"Speed: {movement_speed:.1f}")
+    draw_text(600, 560, f"Collectibles: {len(collectibles)}")
+    draw_text(600, 540, f"Controls:")
+    draw_text(600, 520, f"W - Move Forward")
+    draw_text(600, 500, f"S - Move Backward")
+    draw_text(600, 480, f"A - Strafe Left")
+    draw_text(600, 460, f"D - Strafe Right")
+    draw_text(600, 440, f"Arrow Keys - Rotate")
+    draw_text(600, 420, f"Q - Switch Weapon")
+    draw_text(600, 400, f"Left Click - Shoot/Slash")
+    draw_text(600, 380, f"Right Click - Sword Swing")
 
+    # Collectible legend
+    draw_text(50, 100, f"Collectibles:")
+    draw_text(50, 80, f"Green Cube = +25 Health")
+    draw_text(50, 60, f"Red Cube = +5 Speed")
 
     # Swap buffers for smooth rendering (double buffering)
     glutSwapBuffers()
@@ -477,6 +554,10 @@ def main():
     glutSpecialFunc(specialKeyListener)  # Register special key listener for arrow keys
     glutMouseFunc(mouseListener)  # Register mouse listener for shooting/slashing
     glutIdleFunc(idle)  # Register the idle function to update bullets and effects
+
+    # Initialize some collectibles
+    for _ in range(3):
+        spawn_collectible()
 
     glutMainLoop()  # Enter the GLUT main loop
 
