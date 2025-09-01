@@ -15,7 +15,7 @@ GRID_LENGTH = 2000
 day_night_cycle = 0  # 0 to 1, where 0 is day, 1 is night
 
 # Character properties
-character_pos = [0, 0, 50]  # x, y, z position (starting at center, slightly above ground)
+character_pos = [0, 0, 50]
 character_size = 30
 character_speed = 20
 
@@ -24,19 +24,17 @@ player_x = 0
 player_y = 0 
 player_z = 50
 movement_speed = 20.0
-base_movement_speed = 20.0  # Base speed to reset to
-max_movement_speed = 50.0   # Maximum speed limit
+base_movement_speed = 20.0
+max_movement_speed = 50.0
 
 # Player stats
 player_health = 100
 max_health = 200
 
 # Player rotation and weapon variables
-player_rotation = 0  # Player's rotation angle in degrees
-current_weapon = "gun"  # Current weapon: "gun" or "sword"
-
-# Bullet system
-bullets = []  # List to store active bullets
+player_rotation = 0
+current_weapon = "gun"
+bullets = []
 bullet_speed = 15.0
 bullet_size = 5
 
@@ -47,11 +45,11 @@ sword_swing_angle = 90
 sword_swing_speed = 8
 
 # Collectibles system
-collectibles = []  # List to store collectible cubes
+collectibles = []
 collectible_size = 25
-max_collectibles = 2  # Maximum number of collectibles on map
+max_collectibles = 2
 spawn_timer = 0
-spawn_interval = 300  # Frames between spawn attempts (5 seconds)
+spawn_interval = 300
 
 # Map obstacles for each level
 obstacles = {
@@ -86,6 +84,10 @@ MAX_ENEMIES = 5
 MELEE_TYPE = 1
 RANGED_TYPE = 2
 BOSS_TYPE = 3
+
+# Display lists for optimization
+cube_display_list = 0
+cylinder_display_list = 0
 
 class Enemy:
     def __init__(self, x, y, z, etype):
@@ -130,7 +132,6 @@ class Enemy:
         
         self.patrol_angle += dt * 0.5
         
-        # Target the player position
         target = [player_x, player_y, player_z]
         dist = self.get_dist(target)
         
@@ -150,7 +151,6 @@ class Enemy:
         self.do_ai_stuff(dt, dist, now, target)
         self.update_bullets(dt)
         
-        # Check if enemy bullets hit player
         self.check_bullet_player_collision()
 
     def get_dist(self, target):
@@ -251,7 +251,6 @@ class Enemy:
     def do_attack(self, target):
         if self.weapon == "sword":
             self.sword_swing()
-            # Damage player if in sword range
             if self.get_dist(target) <= self.sword_reach:
                 self.damage_player(self.sword_dmg)
         else:
@@ -304,13 +303,12 @@ class Enemy:
         global player_health
         
         for bullet in self.bullets[:]:
-            # Check distance to player
             dx = bullet['x'] - player_x
             dy = bullet['y'] - player_y
             dz = bullet['z'] - player_z
             distance = math.sqrt(dx*dx + dy*dy + dz*dz)
             
-            if distance < 50:  # Hit player
+            if distance < 50:
                 self.damage_player(bullet['dmg'])
                 self.bullets.remove(bullet)
 
@@ -329,57 +327,49 @@ class Enemy:
         if self.dead:
             return
 
-        # Animated scaling
-        current_time = glutGet(GLUT_ELAPSED_TIME) / 500.0
-        scale_factor = 1.0 + 0.3 * math.sin(2 * math.pi * current_time)
-
+        # Enhanced animation with bounce and rotation
+        bounce = 5 * math.sin(self.anim_t * 2)
+        rotation = 15 * math.sin(self.anim_t)
+        
         glPushMatrix()
-        glTranslatef(self.x, self.y, self.z)
+        glTranslatef(self.x, self.y, self.z + bounce)
+        glRotatef(rotation, 0, 0, 1)
         
-        # Apply the animated scaling
-        glScalef(scale_factor, scale_factor, scale_factor)
-        
-        # Simple sphere-based enemy design
+        # Simple sphere-based enemy design with improved visuals
         if self.type == MELEE_TYPE:
-            # Main body - red sphere
             glPushMatrix()
-            glColor3f(1, 0, 0)  # Red color
-            glutSolidSphere(25, 20, 20)
+            glColor3f(1, 0.2, 0.2)  # Brighter red
+            glutSolidSphere(25, 30, 30)  # Higher poly count
             glPopMatrix()
             
-            # Head - black sphere
             glPushMatrix()
-            glColor3f(0, 0, 0)  # Black head
+            glColor3f(0.1, 0.1, 0.1)
             glTranslatef(0, 0, 30)
-            glutSolidSphere(12, 16, 16)
+            glutSolidSphere(12, 20, 20)
             glPopMatrix()
                 
         elif self.type == RANGED_TYPE:
-            # Main body - blue sphere for ranged
             glPushMatrix()
-            glColor3f(0, 0, 1)  # Blue color
-            glutSolidSphere(25, 20, 20)
+            glColor3f(0.2, 0.2, 1)  # Brighter blue
+            glutSolidSphere(25, 30, 30)
             glPopMatrix()
             
-            # Head - black sphere
             glPushMatrix()
-            glColor3f(0, 0, 0)  # Black head
+            glColor3f(0.1, 0.1, 0.1)
             glTranslatef(0, 0, 30)
-            glutSolidSphere(12, 16, 16)
+            glutSolidSphere(12, 20, 20)
             glPopMatrix()
                 
         else:  # BOSS_TYPE
-            # Larger boss - purple sphere
             glPushMatrix()
-            glColor3f(0.5, 0, 0.5)  # Purple color
-            glutSolidSphere(35, 20, 20)  # Bigger than regular enemies
+            glColor3f(0.6, 0.2, 0.8)  # Vibrant purple
+            glutSolidSphere(35, 40, 40)
             glPopMatrix()
             
-            # Larger head - black sphere
             glPushMatrix()
-            glColor3f(0, 0, 0)  # Black head
+            glColor3f(0.1, 0.1, 0.1)
             glTranslatef(0, 0, 40)
-            glutSolidSphere(18, 16, 16)  # Bigger head
+            glutSolidSphere(18, 20, 20)
             glPopMatrix()
         
         self.draw_current_weapon()
@@ -403,33 +393,29 @@ class Enemy:
             glRotatef(swing, 0, 0, 1)
         
         if self.type == MELEE_TYPE:
-            # Robotic Plasma Sword
-            glColor3f(0.9, 0.0, 0.0)  # Bright red energy
+            glColor3f(1.0, 0.1, 0.1)
             glPushMatrix()
             glScalef(0.08, 0.9, 0.04)
-            glutSolidCube(80)
+            glCallList(cube_display_list)
             glPopMatrix()
                 
         elif self.type == BOSS_TYPE:
-            # Ancient Runic Blade
-            glColor3f(0.6, 0.5, 0.2)  # Ancient bronze
+            glColor3f(0.7, 0.6, 0.3)
             glPushMatrix()
             glScalef(0.12, 1.1, 0.06)
-            glutSolidCube(90)
+            glCallList(cube_display_list)
             glPopMatrix()
         else:
-            # Stealth Energy Blade
-            glColor3f(0.0, 0.8, 1.0)  # Electric blue
+            glColor3f(0.0, 0.9, 1.0)
             glPushMatrix()
             glScalef(0.05, 0.8, 0.03)
-            glutSolidCube(70)
+            glCallList(cube_display_list)
             glPopMatrix()
         
-        # Tech handle
-        glColor3f(0.15, 0.15, 0.2)
+        glColor3f(0.2, 0.2, 0.25)
         glPushMatrix()
         glTranslatef(0, -40, 0)
-        glutSolidCylinder(6, 25, 8, 8)
+        glutSolidCylinder(6, 25, 12, 12)
         glPopMatrix()
         
         glPopMatrix()
@@ -438,7 +424,6 @@ class Enemy:
         glPushMatrix()
         glTranslatef(self.radius * 0.6, 0, 10)
         
-        # Point gun at player
         dx = player_x - self.x
         dy = player_y - self.y
         if dx != 0 or dy != 0:
@@ -446,43 +431,38 @@ class Enemy:
             glRotatef(angle, 0, 0, 1)
         
         if self.type == RANGED_TYPE:
-            # High-tech Energy Rifle
-            glColor3f(0.1, 0.15, 0.2)  # Dark tech
+            glColor3f(0.15, 0.2, 0.25)
             glPushMatrix()
             glTranslatef(25, 0, 0)
             glRotatef(90, 0, 1, 0)
-            glutSolidCylinder(6, 50, 8, 8)
+            glutSolidCylinder(6, 50, 12, 12)
             glPopMatrix()
             
-            # Energy chamber
-            glColor3f(0.0, 0.6, 1.0)
+            glColor3f(0.0, 0.7, 1.0)
             glPushMatrix()
             glTranslatef(10, 0, 0)
-            glutSolidSphere(8, 10, 10)
+            glutSolidSphere(8, 12, 12)
             glPopMatrix()
             
         elif self.type == BOSS_TYPE:
-            # Ancient War Staff
-            glColor3f(0.3, 0.25, 0.15)  # Ancient wood
+            glColor3f(0.4, 0.3, 0.2)
             glPushMatrix()
             glTranslatef(35, 0, 0)
             glRotatef(90, 0, 1, 0)
-            glutSolidCylinder(10, 80, 12, 12)
+            glutSolidCylinder(10, 80, 16, 16)
             glPopMatrix()
             
-            # Golden head piece
-            glColor3f(0.8, 0.6, 0.2)
+            glColor3f(0.9, 0.7, 0.3)
             glPushMatrix()
             glTranslatef(60, 0, 0)
-            glutSolidSphere(18, 12, 12)
+            glutSolidSphere(18, 16, 16)
             glPopMatrix()
         else:
-            # Standard tech weapon
-            glColor3f(0.3, 0.3, 0.35)
+            glColor3f(0.4, 0.4, 0.45)
             glPushMatrix()
             glTranslatef(20, 0, 0)
             glScalef(0.7, 0.12, 0.12)
-            glutSolidCube(35)
+            glCallList(cube_display_list)
             glPopMatrix()
         
         glPopMatrix()
@@ -494,7 +474,7 @@ class Enemy:
         glPushMatrix()
         glTranslatef(self.x, self.y, self.z + self.radius + 30)
         
-        glColor3f(0.2, 0.2, 0.2)
+        glColor3f(0.3, 0.3, 0.3)
         glBegin(GL_QUADS)
         glVertex3f(-25, -3, 0)
         glVertex3f(25, -3, 0)
@@ -525,27 +505,34 @@ class Enemy:
             glTranslatef(b['x'], b['y'], b['z'])
             
             if b['is_special']:
-                # Boss ancient magic - glowing runes
                 glRotatef(time.time() * 120, 0, 1, 0)
-                glColor3f(1.0, 0.8, 0.3)
-                glutSolidCube(16)
-                # Outer glow
-                glColor3f(0.8, 0.6, 0.2)
+                glColor3f(1.0, 0.9, 0.4)
+                glCallList(cube_display_list)
+                glColor3f(0.9, 0.7, 0.3)
                 glutWireCube(20)
             elif self.type == RANGED_TYPE:
-                # Energy plasma bolt
-                glColor3f(0.2, 0.8, 1.0)
-                glutSolidSphere(8, 10, 10)
+                glColor3f(0.3, 0.9, 1.0)
+                glutSolidSphere(8, 12, 12)
             elif self.type == MELEE_TYPE:
-                # Robotic projectile
-                glColor3f(0.8, 0.2, 0.2)
-                glutSolidCube(10)
+                glColor3f(0.9, 0.3, 0.3)
+                glCallList(cube_display_list)
             else:
-                # Standard bullet
-                glColor3f(0.7, 0.7, 0.4)
-                glutSolidSphere(6, 8, 8)
+                glColor3f(0.8, 0.8, 0.5)
+                glutSolidSphere(6, 10, 10)
                 
             glPopMatrix()
+
+def init_display_lists():
+    global cube_display_list, cylinder_display_list
+    cube_display_list = glGenLists(1)
+    glNewList(cube_display_list, GL_COMPILE)
+    glutSolidCube(80)
+    glEndList()
+    
+    cylinder_display_list = glGenLists(1)
+    glNewList(cylinder_display_list, GL_COMPILE)
+    gluCylinder(gluNewQuadric(), 60, 60, 100, 20, 20)
+    glEndList()
 
 def spawn_enemies():
     global enemy_list, boss_list
@@ -553,11 +540,9 @@ def spawn_enemies():
     boss_list = []
     
     for i in range(MAX_ENEMIES):
-        # Spawn enemies away from player
         x = random.randint(-800, 800)
         y = random.randint(-800, 800)
         
-        # Make sure not too close to player
         while math.sqrt(x*x + y*y) < 200:
             x = random.randint(-800, 800)
             y = random.randint(-800, 800)
@@ -605,12 +590,12 @@ def draw_obstacles():
         glTranslatef(obstacle['x'], obstacle['y'], obstacle['z'])
         
         if obstacle['type'] == 'cube':
-            glColor3f(0.8, 0.6, 0.4)
-            glutSolidCube(obstacle['size'])
+            glColor3f(0.9, 0.7, 0.5)
+            glCallList(cube_display_list)
         elif obstacle['type'] == 'cylinder':
-            glColor3f(0.4, 0.6, 0.8)
+            glColor3f(0.5, 0.7, 0.9)
             glRotatef(90, 1, 0, 0)
-            gluCylinder(gluNewQuadric(), obstacle['radius'], obstacle['radius'], obstacle['height'], 20, 20)
+            glCallList(cylinder_display_list)
         
         glPopMatrix()
 
@@ -634,97 +619,76 @@ def check_obstacle_collision(new_x, new_y):
     return False
 
 def spawn_collectible():
-    """Spawn a random collectible on the map"""
     global collectibles
     
     if len(collectibles) < max_collectibles:
-        # Choose random position within grid bounds
         x = random.randint(-GRID_LENGTH + 100, GRID_LENGTH - 100)
         y = random.randint(-GRID_LENGTH + 100, GRID_LENGTH - 100)
-        z = collectible_size  # Place on ground level
-        
-        # Choose type: 'health' (green) or 'speed' (red)
+        z = collectible_size
         cube_type = random.choice(['health', 'speed'])
-        
-        # Add rotation for animation
         rotation = 0
-        
-        # Store as [x, y, z, type, rotation]
-        collectibles.append([x, y, z, cube_type, rotation])
+        pulse_timer = 0
+        collectibles.append([x, y, z, cube_type, rotation, pulse_timer])
 
-def draw_collectible(x, y, z, cube_type, rotation):
-    """Draw a simple collectible cube"""
+def draw_collectible(x, y, z, cube_type, rotation, pulse_timer):
     glPushMatrix()
-    
-    # Position the cube
     glTranslatef(x, y, z)
-    
-    # Rotate for animation
     glRotatef(rotation, 0, 0, 1)
     
-    # Set color based on type
+    # Pulsating effect
+    pulse_scale = 1.0 + 0.1 * math.sin(pulse_timer * 2)
+    glScalef(pulse_scale, pulse_scale, pulse_scale)
+    
     if cube_type == 'health':
-        glColor3f(0, 1, 0)  # Green for health
+        glColor3f(0.2, 1.0, 0.2)
     elif cube_type == 'speed':
-        glColor3f(1, 0, 0)  # Red for speed
+        glColor3f(1.0, 0.2, 0.2)
     
-    # Draw the cube
-    glutSolidCube(collectible_size)
-    
+    glCallList(cube_display_list)
     glPopMatrix()
 
 def draw_all_collectibles():
-    """Draw all collectibles on the map"""
     for collectible in collectibles:
-        x, y, z, cube_type, rotation = collectible
-        draw_collectible(x, y, z, cube_type, rotation)
+        x, y, z, cube_type, rotation, pulse_timer = collectible
+        draw_collectible(x, y, z, cube_type, rotation, pulse_timer)
 
 def update_collectibles():
-    """Update collectible animations and spawning"""
     global collectibles, spawn_timer
     
-    # Update rotations for animation
     for collectible in collectibles:
         collectible[4] = (collectible[4] + 2) % 360
+        collectible[5] = (collectible[5] + 0.1) % (2 * math.pi)
     
-    # Handle spawning
     spawn_timer += 1
     if spawn_timer >= spawn_interval:
         spawn_collectible()
         spawn_timer = 0
 
 def check_collectible_collision():
-    """Check if player collides with any collectibles"""
     global collectibles, player_health, movement_speed
     
-    player_collision_radius = 60  # Player collision radius
+    player_collision_radius = 60
     
     for i, collectible in enumerate(collectibles):
-        x, y, z, cube_type, rotation = collectible
+        x, y, z, cube_type, rotation, _ = collectible
         
-        # Calculate distance between player and collectible
         dx = player_x - x
         dy = player_y - y
         distance = math.sqrt(dx*dx + dy*dy)
         
-        # Check collision
         if distance < (player_collision_radius + collectible_size/2):
-            # Collision detected!
             if cube_type == 'health':
-                # Add health
                 health_gain = 25
                 player_health = min(player_health + health_gain, max_health)
                 print(f"Health collected! +{health_gain} HP (Current: {player_health})")
                 
             elif cube_type == 'speed':
-                # Increase movement speed
                 speed_boost = 5.0
                 movement_speed = min(movement_speed + speed_boost, max_movement_speed)
                 print(f"Speed boost collected! +{speed_boost} speed (Current: {movement_speed:.1f})")
             
-            # Remove the collected cube
             collectibles.pop(i)
-            break  # Exit loop to avoid index issues
+            break
 
 def draw_text(x, y, text):
     glColor3f(1, 1, 1)
@@ -732,104 +696,120 @@ def draw_text(x, y, text):
     glPushMatrix()
     glLoadIdentity()
     
-    # Set up an orthographic projection that matches window coordinates
-    gluOrtho2D(0, 1000, 0, 800)  # left, right, bottom, top
+    gluOrtho2D(0, 1000, 0, 800)
     
     glMatrixMode(GL_MODELVIEW)
     glPushMatrix()
     glLoadIdentity()
     
-    # Draw text at (x, y) in screen coordinates
     glRasterPos2f(x, y)
     for ch in text:
         try:
             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, ord(ch))
         except:
-            # Fallback: skip text rendering if font is not available
             pass
     
-    # Restore original projection and modelview matrices
+    glPopMatrix()
+    glMatrixMode(GL_PROJECTION)
+    glPopMatrix()
+    glMatrixMode(GL_MODELVIEW)
+
+def draw_player_health_bar():
+    glMatrixMode(GL_PROJECTION)
+    glPushMatrix()
+    glLoadIdentity()
+    gluOrtho2D(0, 1000, 0, 800)
+    
+    glMatrixMode(GL_MODELVIEW)
+    glPushMatrix()
+    glLoadIdentity()
+    
+    glColor3f(0.3, 0.3, 0.3)
+    glBegin(GL_QUADS)
+    glVertex2f(50, 750)
+    glVertex2f(250, 750)
+    glVertex2f(250, 770)
+    glVertex2f(50, 770)
+    glEnd()
+    
+    hp_pct = player_health / max_health
+    if hp_pct > 0.6:
+        glColor3f(0.0, 1.0, 0.0)
+    elif hp_pct > 0.3:
+        glColor3f(1.0, 1.0, 0.0)
+    else:
+        glColor3f(1.0, 0.0, 0.0)
+    
+    glBegin(GL_QUADS)
+    glVertex2f(50, 751)
+    glVertex2f(50 + 200 * hp_pct, 751)
+    glVertex2f(50 + 200 * hp_pct, 769)
+    glVertex2f(50, 769)
+    glEnd()
+    
     glPopMatrix()
     glMatrixMode(GL_PROJECTION)
     glPopMatrix()
     glMatrixMode(GL_MODELVIEW)
 
 def draw_player():
-    """Draw player with animated sword"""
     glPushMatrix()
     
-    # Apply position and rotation transformations
     glTranslatef(player_x, player_y, player_z)
-    glRotatef(player_rotation, 0, 0, 1)  # Rotate around Z-axis
+    glRotatef(player_rotation, 0, 0, 1)
     
-    # Draw player body (green cube)
-    glColor3f(0.5, 1, 0.5)
-    glutSolidCube(80)
+    glColor3f(0.6, 1.0, 0.6)
+    glCallList(cube_display_list)
     
-    # Draw player head (black sphere)
     glTranslatef(0, 0, 80)
-    glColor3f(0, 0, 0)
-    gluSphere(gluNewQuadric(), 30, 10, 10)
+    glColor3f(0.1, 0.1, 0.1)
+    gluSphere(gluNewQuadric(), 30, 15, 15)
     
-    # Draw arms (flesh colored cylinders)
-    glColor3f(1, .9, .8)
+    glColor3f(1, 0.9, 0.8)
     glTranslatef(50, -30, -70)
     glRotatef(90, 1, 0, 0)
-    gluCylinder(gluNewQuadric(), 30, 15, 100, 10, 10)   
+    gluCylinder(gluNewQuadric(), 30, 15, 100, 12, 12)
     glTranslatef(-100, 0, 0)
-    gluCylinder(gluNewQuadric(), 30, 15, 100, 10, 10)  
+    gluCylinder(gluNewQuadric(), 30, 15, 100, 12, 12)
     
-    # Draw legs (blue cylinders)
-    glColor3f(0, 0, 1)
+    glColor3f(0.1, 0.1, 0.8)
     glRotatef(90, 1, 0, 0)
     glTranslatef(0, 10, 100)
-    gluCylinder(gluNewQuadric(), 30, 15, 100, 10, 10)
+    gluCylinder(gluNewQuadric(), 30, 15, 100, 12, 12)
     glTranslatef(100, 0, 0)
-    gluCylinder(gluNewQuadric(), 30, 15, 100, 10, 10)
+    gluCylinder(gluNewQuadric(), 30, 15, 100, 12, 12)
     
-    # Draw weapon based on current selection
-    glColor3f(0.5, 0.5, 0.5)
+    glColor3f(0.6, 0.6, 0.6)
     glRotatef(-90, 1, 0, 0)
     
     if current_weapon == "gun":
-        # Draw gun (gray cylinder)
         glTranslatef(-110, 70, 80)
-        gluCylinder(gluNewQuadric(), 30, 15, 100, 10, 10)
+        gluCylinder(gluNewQuadric(), 30, 15, 100, 12, 12)
     elif current_weapon == "sword":
-        # Use the animated sword angle if swinging, otherwise use default
         current_angle = sword_swing_angle if sword_swing_active else 90
         draw_sword(current_angle, 0, 1, 0)
     
     glPopMatrix()
 
 def draw_sword(sword_angle=90, x=0, y=1, z=0):
-    """Draw sword with proper positioning and rotation"""
     glPushMatrix()
     
-    # Sword color (red)
-    glColor3f(1, 0, 0)  
-    
-    # Position the sword relative to the player's hand
+    glColor3f(1, 0.1, 0.1)
     glTranslatef(-100, 100, 90)
-    
-    # Apply the rotation - this is the key part that makes it swing
     glRotatef(sword_angle, x, y, z)
+    gluCylinder(gluNewQuadric(), 20, 1, 250, 25, 25)
     
-    # Draw the sword as a tapered cylinder (blade)
-    gluCylinder(gluNewQuadric(), 20, 1, 250, 20, 20)
-    
-    # Optional: Draw sword handle
-    glColor3f(0.4, 0.2, 0.1)  # Brown handle
+    glColor3f(0.5, 0.3, 0.2)
     glTranslatef(0, 0, -30)
-    gluCylinder(gluNewQuadric(), 25, 25, 30, 10, 10)
+    gluCylinder(gluNewQuadric(), 25, 25, 30, 12, 12)
     
     glPopMatrix()
 
 def draw_bullet(x, y, z):
     glPushMatrix()
-    glColor3f(1, 0, 0)
+    glColor3f(1, 0.2, 0.2)
     glTranslatef(x, y, z)
-    glutSolidCube(bullet_size)
+    glutSolidSphere(bullet_size, 10, 10)
     glPopMatrix()
 
 def draw_all_bullets():
@@ -844,7 +824,6 @@ def update_bullets():
         bullet[1] += bullet[4]
         bullet[2] += bullet[5]
         
-        # Check if bullet hits enemy
         for enemy in get_enemies():
             if not enemy.dead:
                 dx = bullet[0] - enemy.x
@@ -852,52 +831,41 @@ def update_bullets():
                 dz = bullet[2] - enemy.z
                 distance = math.sqrt(dx*dx + dy*dy + dz*dz)
                 
-                if distance < 50:  # Hit enemy
-                    enemy.hurt(50)  # Damage enemy
+                if distance < 50:
+                    enemy.hurt(50)
                     bullets.pop(i)
                     break
         
-        # Remove bullets that are too far
         if abs(bullet[0]) > 2000 or abs(bullet[1]) > 2000:
             bullets.pop(i)
 
 def update_sword_swing():
-    """Update sword swing animation"""
     global sword_swing_active, sword_swing_timer, sword_swing_angle
     
     if sword_swing_active:
         sword_swing_timer += 1
-        
-        # Swing duration (frames)
         swing_duration = 30
         
         if sword_swing_timer <= swing_duration:
-            # Calculate swing progress (0 to 1)
             progress = sword_swing_timer / swing_duration
-            
-            # Create a smooth swing motion
             if progress <= 0.5:
-                # First half: swing down from 90° to -45°
                 sword_swing_angle = 90 - (135 * (progress * 2))
             else:
-                # Second half: swing back up from -45° to 90°
                 sword_swing_angle = -45 + (135 * ((progress - 0.5) * 2))
                 
-            # Check for sword hits on enemies during swing
-            if 10 <= sword_swing_timer <= 20:  # Active damage frames
+            if 10 <= sword_swing_timer <= 20:
                 for enemy in get_enemies():
                     if not enemy.dead:
                         dx = player_x - enemy.x
                         dy = player_y - enemy.y
                         distance = math.sqrt(dx*dx + dy*dy)
                         
-                        if distance < 120:  # Sword reach
-                            enemy.hurt(75)  # Sword damage
+                        if distance < 120:
+                            enemy.hurt(75)
         else:
-            # End the swing
             sword_swing_active = False
             sword_swing_timer = 0
-            sword_swing_angle = 90  # Reset to default position
+            sword_swing_angle = 90
 
 def shoot_bullet():
     global bullets
@@ -917,26 +885,23 @@ def shoot_bullet():
     bullets.append([gun_x, gun_y, gun_z, bullet_dx, bullet_dy, bullet_dz])
 
 def mouseListener(button, state, x, y):
-    """Handle mouse clicks for shooting and slashing"""
     global sword_swing_active, sword_swing_timer, sword_swing_angle
     
     if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
         if current_weapon == "gun":
             shoot_bullet()
         elif current_weapon == "sword":
-            # Quick slash attack
             for enemy in get_enemies():
                 if not enemy.dead:
                     dx = player_x - enemy.x
                     dy = player_y - enemy.y
                     distance = math.sqrt(dx*dx + dy*dy)
                     
-                    if distance < 100:  # Slash range
-                        enemy.hurt(60)  # Slash damage
+                    if distance < 100:
+                        enemy.hurt(60)
     
     elif button == GLUT_RIGHT_BUTTON and state == GLUT_DOWN:
         if current_weapon == "sword":
-            # Start sword swing animation
             sword_swing_active = True
             sword_swing_timer = 0
             sword_swing_angle = 90
@@ -944,35 +909,24 @@ def mouseListener(button, state, x, y):
     glutPostRedisplay()
 
 def setupCamera():
-    """
-    Configures the camera's projection and view settings.
-    Uses a perspective projection and positions the camera to look at the target.
-    """
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     gluPerspective(fovY, 1.25, 0.1, 5000)
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
 
-    # Third-person camera that follows the player
     camera_distance = 300
     camera_height = 150
-    
-    # Calculate camera position based on player rotation
     angle_rad = math.radians(player_rotation)
     cam_x = player_x - camera_distance * math.cos(angle_rad)
     cam_y = player_y - camera_distance * math.sin(angle_rad)
     cam_z = player_z + camera_height
     
-    # Look at the player
     gluLookAt(cam_x, cam_y, cam_z,
               player_x, player_y, player_z + 50,
               0, 0, 1)
 
 def keyboardListener(key, x, y):
-    """
-    Handle keyboard input for character movement, rotation, and weapon switching.
-    """
     global character_pos, player_x, player_y, player_z, player_rotation, current_weapon
     
     if key == b'w' or key == b'W':
@@ -1023,79 +977,67 @@ def keyboardListener(key, x, y):
             player_y = new_y
             character_pos[1] = new_y
             
-    elif key == b'q' or key == b'Q':  # Switch weapon
+    elif key == b'q' or key == b'Q':
         if current_weapon == "gun":
             current_weapon = "sword"
         else:
             current_weapon = "gun"
     
-    elif key == b'r' or key == b'R':  # Respawn enemies
+    elif key == b'r' or key == b'R':
         spawn_enemies()
     
     glutPostRedisplay()
 
 def specialKeyListener(key, x, y):
-    """
-    Handle special keys (arrow keys) for player rotation.
-    """
     global player_rotation
     
-    if key == GLUT_KEY_LEFT:  # Rotate left
+    if key == GLUT_KEY_LEFT:
         player_rotation += 10
-    elif key == GLUT_KEY_RIGHT:  # Rotate right
+    elif key == GLUT_KEY_RIGHT:
         player_rotation -= 10
     
-    # Keep rotation within 0-360 degrees
     player_rotation = player_rotation % 360
-    
     glutPostRedisplay()
 
 def idle():
-    """
-    Idle function that runs continuously
-    """
     global day_night_cycle, last_frame
     
-    # Calculate delta time
     current_time = time.time()
     dt = current_time - last_frame
     last_frame = current_time
     
-    # Update day/night cycle
     day_night_cycle = (day_night_cycle + 0.0005) % 1.0
-
-    # Update bullets
     update_bullets()
-    
-    # Update sword swing animation
     update_sword_swing()
-    
-    # Update collectibles
     update_collectibles()
-    
-    # Check for collectible collisions
     check_collectible_collision()
-    
-    # Update enemies
     tick_all_enemies(dt)
     
-    # Check if player is dead
     if player_health <= 0:
         print("Game Over! Press R to respawn enemies and continue...")
     
-    # Respawn enemies if all are dead
     if not get_enemies():
         print("All enemies defeated! Spawning new wave...")
         spawn_enemies()
     
-    # Ensure the screen updates with the latest changes
     glutPostRedisplay()
 
+def setup_lighting():
+    glEnable(GL_LIGHTING)
+    glEnable(GL_LIGHT0)
+    
+    # Day/night affected lighting
+    light_intensity = 0.5 + 0.3 * math.sin(day_night_cycle * 2 * math.pi)
+    glLightfv(GL_LIGHT0, GL_POSITION, [0, 0, 1000, 0])
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, [light_intensity, light_intensity, light_intensity, 1.0])
+    glLightfv(GL_LIGHT0, GL_SPECULAR, [0.5, 0.5, 0.5, 1.0])
+    
+    glEnable(GL_COLOR_MATERIAL)
+    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, [0.5, 0.5, 0.5, 1.0])
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 50.0)
+
 def showScreen():
-    """
-    Display function to render the game scene
-    """
-    # Clear color and depth buffers with day/night cycle
     day_color = 0.5 + 0.3 * math.sin(day_night_cycle * 2 * math.pi)
     glClearColor(day_color * 0.2, day_color * 0.2, day_color * 0.4, 1.0)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -1103,50 +1045,29 @@ def showScreen():
     glViewport(0, 0, 1000, 800)
 
     setupCamera()
+    setup_lighting()
 
-    # Draw the grid (game floor)
+    # Draw grid with texture-like pattern
     glBegin(GL_QUADS)
-    
-    glColor3f(1, 1, 1)
-    glVertex3f(-GRID_LENGTH, GRID_LENGTH, 0)
-    glVertex3f(0, GRID_LENGTH, 0)
-    glVertex3f(0, 0, 0)
-    glVertex3f(-GRID_LENGTH, 0, 0)
-
-    glVertex3f(GRID_LENGTH, -GRID_LENGTH, 0)
-    glVertex3f(0, -GRID_LENGTH, 0)
-    glVertex3f(0, 0, 0)
-    glVertex3f(GRID_LENGTH, 0, 0)
-
-    glColor3f(0.7, 0.5, 0.95)
-    glVertex3f(-GRID_LENGTH, -GRID_LENGTH, 0)
-    glVertex3f(-GRID_LENGTH, 0, 0)
-    glVertex3f(0, 0, 0)
-    glVertex3f(0, -GRID_LENGTH, 0)
-
-    glVertex3f(GRID_LENGTH, GRID_LENGTH, 0)
-    glVertex3f(GRID_LENGTH, 0, 0)
-    glVertex3f(0, 0, 0)
-    glVertex3f(0, GRID_LENGTH, 0)
+    for i in range(-GRID_LENGTH, GRID_LENGTH, 100):
+        for j in range(-GRID_LENGTH, GRID_LENGTH, 100):
+            color = 0.7 if (i//100 + j//100) % 2 == 0 else 0.9
+            glColor3f(color, color * 0.8, color * 0.95)
+            glVertex3f(i, j, 0)
+            glVertex3f(i + 100, j, 0)
+            glVertex3f(i + 100, j + 100, 0)
+            glVertex3f(i, j + 100, 0)
     glEnd()
 
-    # Draw obstacles
     draw_obstacles()
-
-    # Draw player
     draw_player()
-
-    # Draw bullets
     draw_all_bullets()
-
-    # Draw collectibles
     draw_all_collectibles()
-    
-    # Draw enemies
     render_all_enemies()
 
-    # Display game info
     enemies_alive = len([e for e in get_enemies() if not e.dead])
+    
+    draw_player_health_bar()
     
     draw_text(600, 660, f"Position: ({character_pos[0]:.0f}, {character_pos[1]:.0f})")
     draw_text(600, 640, f"Rotation: {player_rotation:.0f}°")
@@ -1164,25 +1085,21 @@ def showScreen():
     draw_text(600, 400, f"Right Click - Sword Swing")
     draw_text(600, 380, f"R - Respawn Enemies")
 
-    # Collectible legend
     draw_text(50, 120, f"Collectibles:")
     draw_text(50, 100, f"Green Cube = +25 Health")
     draw_text(50, 80, f"Red Cube = +5 Speed")
     
-    # Enemy types legend
     draw_text(50, 200, f"Enemies:")
     draw_text(50, 180, f"Red = Melee Fighter")
     draw_text(50, 160, f"Blue = Ranged Fighter") 
     draw_text(50, 140, f"Purple = Boss")
 
-    # Game over message
     if player_health <= 0:
         draw_text(400, 400, f"GAME OVER!")
         draw_text(350, 380, f"Press R to continue...")
 
     glutSwapBuffers()
 
-# Main function to set up OpenGL window and loop
 def main():
     global last_frame
     
@@ -1190,22 +1107,19 @@ def main():
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
     glutInitWindowSize(1000, 800)
     glutInitWindowPosition(0, 0)
-    wind = glutCreateWindow(b"Complete 3D Game")
+    wind = glutCreateWindow(b"Enhanced 3D Game")
 
-    # Enable depth testing
     glEnable(GL_DEPTH_TEST)
+    glEnable(GL_NORMALIZE)
     
-    # Initialize game state
+    init_display_lists()
+    
     last_frame = time.time()
-    
-    # Spawn initial enemies
     spawn_enemies()
     
-    # Initialize some collectibles
     for _ in range(3):
         spawn_collectible()
 
-    # Register callback functions
     glutDisplayFunc(showScreen)
     glutKeyboardFunc(keyboardListener)
     glutSpecialFunc(specialKeyListener)
