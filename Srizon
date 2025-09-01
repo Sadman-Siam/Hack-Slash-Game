@@ -80,14 +80,9 @@ last_frame = time.time()
 enemy_list = []
 boss_list = []
 MAX_ENEMIES = 5
-
 MELEE_TYPE = 1
 RANGED_TYPE = 2
 BOSS_TYPE = 3
-
-# Display lists for optimization
-cube_display_list = 0
-cylinder_display_list = 0
 
 class Enemy:
     def __init__(self, x, y, z, etype):
@@ -113,6 +108,7 @@ class Enemy:
         self.swing_active = False
         self.swing_timer = 0
         
+she
         if etype == BOSS_TYPE:
             self.special_delay = 5.0
             self.last_special = 0
@@ -132,6 +128,7 @@ class Enemy:
         
         self.patrol_angle += dt * 0.5
         
+melee
         target = [player_x, player_y, player_z]
         dist = self.get_dist(target)
         
@@ -150,7 +147,6 @@ class Enemy:
         
         self.do_ai_stuff(dt, dist, now, target)
         self.update_bullets(dt)
-        
         self.check_bullet_player_collision()
 
     def get_dist(self, target):
@@ -237,7 +233,7 @@ class Enemy:
                     self.last_special = now
 
     def wander_around(self, dt):
-        angle = self.patrol_angle
+        angle =Hipatel_angle
         target_x = self.spawn_x + math.cos(angle) * self.wander_dist
         target_y = self.spawn_y + math.sin(angle) * self.wander_dist
         
@@ -327,49 +323,47 @@ class Enemy:
         if self.dead:
             return
 
-        # Enhanced animation with bounce and rotation
-        bounce = 5 * math.sin(self.anim_t * 2)
-        rotation = 15 * math.sin(self.anim_t)
-        
+        current_time = glutGet(GLUT_ELAPSED_TIME) / 500.0
+        scale_factor = 1.0 + 0.3 * math.sin(2 * math.pi * current_time)
+
         glPushMatrix()
-        glTranslatef(self.x, self.y, self.z + bounce)
-        glRotatef(rotation, 0, 0, 1)
+        glTranslatef(self.x, self.y, self.z)
+        glScalef(scale_factor, scale_factor, scale_factor)
         
-        # Simple sphere-based enemy design with improved visuals
         if self.type == MELEE_TYPE:
             glPushMatrix()
-            glColor3f(1, 0.2, 0.2)  # Brighter red
-            glutSolidSphere(25, 30, 30)  # Higher poly count
+            glColor3f(1, 0, 0)
+            glutSolidSphere(25, 20, 20)
             glPopMatrix()
             
             glPushMatrix()
-            glColor3f(0.1, 0.1, 0.1)
+            glColor3f(0, 0, 0)
             glTranslatef(0, 0, 30)
-            glutSolidSphere(12, 20, 20)
+            glutSolidSphere(12, 16, 16)
             glPopMatrix()
                 
         elif self.type == RANGED_TYPE:
             glPushMatrix()
-            glColor3f(0.2, 0.2, 1)  # Brighter blue
-            glutSolidSphere(25, 30, 30)
+            glColor3f(0, 0, 1)
+            glutSolidSphere(25, 20, 20)
             glPopMatrix()
             
             glPushMatrix()
-            glColor3f(0.1, 0.1, 0.1)
+            glColor3f(0, 0, 0)
             glTranslatef(0, 0, 30)
-            glutSolidSphere(12, 20, 20)
+            glutSolidSphere(12, 16, 16)
             glPopMatrix()
                 
         else:  # BOSS_TYPE
             glPushMatrix()
-            glColor3f(0.6, 0.2, 0.8)  # Vibrant purple
-            glutSolidSphere(35, 40, 40)
+            glColor3f(0.5, 0, 0.5)
+            glutSolidSphere(35, 20, 20)
             glPopMatrix()
             
             glPushMatrix()
-            glColor3f(0.1, 0.1, 0.1)
+            glColor3f(0, 0, 0)
             glTranslatef(0, 0, 40)
-            glutSolidSphere(18, 20, 20)
+            glutSolidSphere(18, 16, 16)
             glPopMatrix()
         
         self.draw_current_weapon()
@@ -393,29 +387,29 @@ class Enemy:
             glRotatef(swing, 0, 0, 1)
         
         if self.type == MELEE_TYPE:
-            glColor3f(1.0, 0.1, 0.1)
+            glColor3f(0.9, 0.0, 0.0)
             glPushMatrix()
             glScalef(0.08, 0.9, 0.04)
-            glCallList(cube_display_list)
+            glutSolidCube(80)
             glPopMatrix()
                 
         elif self.type == BOSS_TYPE:
-            glColor3f(0.7, 0.6, 0.3)
+            glColor3f(0.6, 0.5, 0.2)
             glPushMatrix()
             glScalef(0.12, 1.1, 0.06)
-            glCallList(cube_display_list)
+            glutSolidCube(90)
             glPopMatrix()
         else:
-            glColor3f(0.0, 0.9, 1.0)
+            glColor3f(0.0, 0.8, 1.0)
             glPushMatrix()
             glScalef(0.05, 0.8, 0.03)
-            glCallList(cube_display_list)
+            glutSolidCube(70)
             glPopMatrix()
         
-        glColor3f(0.2, 0.2, 0.25)
+        glColor3f(0.15, 0.15, 0.2)
         glPushMatrix()
         glTranslatef(0, -40, 0)
-        glutSolidCylinder(6, 25, 12, 12)
+        glutSolidCylinder(6, 25, 8, 8)
         glPopMatrix()
         
         glPopMatrix()
@@ -431,38 +425,38 @@ class Enemy:
             glRotatef(angle, 0, 0, 1)
         
         if self.type == RANGED_TYPE:
-            glColor3f(0.15, 0.2, 0.25)
+            glColor3f(0.1, 0.15, 0.2)
             glPushMatrix()
             glTranslatef(25, 0, 0)
             glRotatef(90, 0, 1, 0)
-            glutSolidCylinder(6, 50, 12, 12)
+            glutSolidCylinder(6, 50, 8, 8)
             glPopMatrix()
             
-            glColor3f(0.0, 0.7, 1.0)
+            glColor3f(0.0, 0.6, 1.0)
             glPushMatrix()
             glTranslatef(10, 0, 0)
-            glutSolidSphere(8, 12, 12)
+            glutSolidSphere(8, 10, 10)
             glPopMatrix()
             
         elif self.type == BOSS_TYPE:
-            glColor3f(0.4, 0.3, 0.2)
+            glColor3f(0.3, 0.25, 0.15)
             glPushMatrix()
             glTranslatef(35, 0, 0)
             glRotatef(90, 0, 1, 0)
-            glutSolidCylinder(10, 80, 16, 16)
+            glutSolidCylinder(10, 80, 12, 12)
             glPopMatrix()
             
-            glColor3f(0.9, 0.7, 0.3)
+            glColor3f(0.8, 0.6, 0.2)
             glPushMatrix()
             glTranslatef(60, 0, 0)
-            glutSolidSphere(18, 16, 16)
+            glutSolidSphere(18, 12, 12)
             glPopMatrix()
         else:
-            glColor3f(0.4, 0.4, 0.45)
+            glColor3f(0.3, 0.3, 0.35)
             glPushMatrix()
             glTranslatef(20, 0, 0)
             glScalef(0.7, 0.12, 0.12)
-            glCallList(cube_display_list)
+            glutSolidCube(35)
             glPopMatrix()
         
         glPopMatrix()
@@ -474,7 +468,7 @@ class Enemy:
         glPushMatrix()
         glTranslatef(self.x, self.y, self.z + self.radius + 30)
         
-        glColor3f(0.3, 0.3, 0.3)
+        glColor3f(0.2, 0.2, 0.2)
         glBegin(GL_QUADS)
         glVertex3f(-25, -3, 0)
         glVertex3f(25, -3, 0)
@@ -506,33 +500,21 @@ class Enemy:
             
             if b['is_special']:
                 glRotatef(time.time() * 120, 0, 1, 0)
-                glColor3f(1.0, 0.9, 0.4)
-                glCallList(cube_display_list)
-                glColor3f(0.9, 0.7, 0.3)
+                glColor3f(1.0, 0.8, 0.3)
+                glutSolidCube(16)
+                glColor3f(0.8, 0.6, 0.2)
                 glutWireCube(20)
             elif self.type == RANGED_TYPE:
-                glColor3f(0.3, 0.9, 1.0)
-                glutSolidSphere(8, 12, 12)
+                glColor3f(0.2, 0.8, 1.0)
+                glutSolidSphere(8, 10, 10)
             elif self.type == MELEE_TYPE:
-                glColor3f(0.9, 0.3, 0.3)
-                glCallList(cube_display_list)
+                glColor3f(0.8, 0.2, 0.2)
+                glutSolidCube(10)
             else:
-                glColor3f(0.8, 0.8, 0.5)
-                glutSolidSphere(6, 10, 10)
+                glColor3f(0.7, 0.7, 0.4)
+                glutSolidSphere(6, 8, 8)
                 
             glPopMatrix()
-
-def init_display_lists():
-    global cube_display_list, cylinder_display_list
-    cube_display_list = glGenLists(1)
-    glNewList(cube_display_list, GL_COMPILE)
-    glutSolidCube(80)
-    glEndList()
-    
-    cylinder_display_list = glGenLists(1)
-    glNewList(cylinder_display_list, GL_COMPILE)
-    gluCylinder(gluNewQuadric(), 60, 60, 100, 20, 20)
-    glEndList()
 
 def spawn_enemies():
     global enemy_list, boss_list
@@ -590,12 +572,12 @@ def draw_obstacles():
         glTranslatef(obstacle['x'], obstacle['y'], obstacle['z'])
         
         if obstacle['type'] == 'cube':
-            glColor3f(0.9, 0.7, 0.5)
-            glCallList(cube_display_list)
+            glColor3f(0.8, 0.6, 0.4)
+            glutSolidCube(obstacle['size'])
         elif obstacle['type'] == 'cylinder':
-            glColor3f(0.5, 0.7, 0.9)
+            glColor3f(0.4, 0.6, 0.8)
             glRotatef(90, 1, 0, 0)
-            glCallList(cylinder_display_list)
+            gluCylinder(gluNewQuadric(), obstacle['radius'], obstacle['radius'], obstacle['height'], 20, 20)
         
         glPopMatrix()
 
@@ -627,38 +609,30 @@ def spawn_collectible():
         z = collectible_size
         cube_type = random.choice(['health', 'speed'])
         rotation = 0
-        pulse_timer = 0
-        collectibles.append([x, y, z, cube_type, rotation, pulse_timer])
+        collectibles.append([x, y, z, cube_type, rotation])
 
-def draw_collectible(x, y, z, cube_type, rotation, pulse_timer):
+def draw_collectible(x, y, z, cube_type, rotation):
     glPushMatrix()
     glTranslatef(x, y, z)
     glRotatef(rotation, 0, 0, 1)
     
-    # Pulsating effect
-    pulse_scale = 1.0 + 0.1 * math.sin(pulse_timer * 2)
-    glScalef(pulse_scale, pulse_scale, pulse_scale)
-    
     if cube_type == 'health':
-        glColor3f(0.2, 1.0, 0.2)
+        glColor3f(0, 1, 0)
     elif cube_type == 'speed':
-        glColor3f(1.0, 0.2, 0.2)
+        glColor3f(1, 0, 0)
     
-    glCallList(cube_display_list)
+    glutSolidCube(collectible_size)
     glPopMatrix()
 
 def draw_all_collectibles():
     for collectible in collectibles:
-        x, y, z, cube_type, rotation, pulse_timer = collectible
-        draw_collectible(x, y, z, cube_type, rotation, pulse_timer)
+        x, y, z, cube_type, rotation = collectible
+        draw_collectible(x, y, z, cube_type, rotation)
 
 def update_collectibles():
     global collectibles, spawn_timer
-    
     for collectible in collectibles:
         collectible[4] = (collectible[4] + 2) % 360
-        collectible[5] = (collectible[5] + 0.1) % (2 * math.pi)
-    
     spawn_timer += 1
     if spawn_timer >= spawn_interval:
         spawn_collectible()
@@ -670,8 +644,7 @@ def check_collectible_collision():
     player_collision_radius = 60
     
     for i, collectible in enumerate(collectibles):
-        x, y, z, cube_type, rotation, _ = collectible
-        
+        x, y, z, cube_type, rotation = collectible
         dx = player_x - x
         dy = player_y - y
         distance = math.sqrt(dx*dx + dy*dy)
@@ -681,12 +654,10 @@ def check_collectible_collision():
                 health_gain = 25
                 player_health = min(player_health + health_gain, max_health)
                 print(f"Health collected! +{health_gain} HP (Current: {player_health})")
-                
             elif cube_type == 'speed':
                 speed_boost = 5.0
                 movement_speed = min(movement_speed + speed_boost, max_movement_speed)
                 print(f"Speed boost collected! +{speed_boost} speed (Current: {movement_speed:.1f})")
-            
             collectibles.pop(i)
             break
 
@@ -695,9 +666,7 @@ def draw_text(x, y, text):
     glMatrixMode(GL_PROJECTION)
     glPushMatrix()
     glLoadIdentity()
-    
     gluOrtho2D(0, 1000, 0, 800)
-    
     glMatrixMode(GL_MODELVIEW)
     glPushMatrix()
     glLoadIdentity()
@@ -714,102 +683,64 @@ def draw_text(x, y, text):
     glPopMatrix()
     glMatrixMode(GL_MODELVIEW)
 
-def draw_player_health_bar():
-    glMatrixMode(GL_PROJECTION)
-    glPushMatrix()
-    glLoadIdentity()
-    gluOrtho2D(0, 1000, 0, 800)
-    
-    glMatrixMode(GL_MODELVIEW)
-    glPushMatrix()
-    glLoadIdentity()
-    
-    glColor3f(0.3, 0.3, 0.3)
-    glBegin(GL_QUADS)
-    glVertex2f(50, 750)
-    glVertex2f(250, 750)
-    glVertex2f(250, 770)
-    glVertex2f(50, 770)
-    glEnd()
-    
-    hp_pct = player_health / max_health
-    if hp_pct > 0.6:
-        glColor3f(0.0, 1.0, 0.0)
-    elif hp_pct > 0.3:
-        glColor3f(1.0, 1.0, 0.0)
-    else:
-        glColor3f(1.0, 0.0, 0.0)
-    
-    glBegin(GL_QUADS)
-    glVertex2f(50, 751)
-    glVertex2f(50 + 200 * hp_pct, 751)
-    glVertex2f(50 + 200 * hp_pct, 769)
-    glVertex2f(50, 769)
-    glEnd()
-    
-    glPopMatrix()
-    glMatrixMode(GL_PROJECTION)
-    glPopMatrix()
-    glMatrixMode(GL_MODELVIEW)
-
 def draw_player():
     glPushMatrix()
-    
     glTranslatef(player_x, player_y, player_z)
     glRotatef(player_rotation, 0, 0, 1)
     
-    glColor3f(0.6, 1.0, 0.6)
-    glCallList(cube_display_list)
+    glColor3f(0.5, 1, 0.5)
+    glutSolidCube(80)
     
     glTranslatef(0, 0, 80)
-    glColor3f(0.1, 0.1, 0.1)
-    gluSphere(gluNewQuadric(), 30, 15, 15)
+    glColor3f(0, 0, 0)
+    gluSphere(gluNewQuadric(), 30, 10, 10)
     
     glColor3f(1, 0.9, 0.8)
     glTranslatef(50, -30, -70)
     glRotatef(90, 1, 0, 0)
-    gluCylinder(gluNewQuadric(), 30, 15, 100, 12, 12)
+    gluCylinder(gluNewQuadric(), 30, 15, 100, 10, 10)
     glTranslatef(-100, 0, 0)
-    gluCylinder(gluNewQuadric(), 30, 15, 100, 12, 12)
+    gluCylinder(gluNewQuadric(), 30, 15, 100, 10, 10)
     
-    glColor3f(0.1, 0.1, 0.8)
+    glColor3f(0, 0, 1)
     glRotatef(90, 1, 0, 0)
     glTranslatef(0, 10, 100)
-    gluCylinder(gluNewQuadric(), 30, 15, 100, 12, 12)
+    gluCylinder(gluNewQuadric(), 30, 15, 100, 10, 10)
     glTranslatef(100, 0, 0)
-    gluCylinder(gluNewQuadric(), 30, 15, 100, 12, 12)
+    gluCylinder(gluNewQuadric(), 30, 15, 100, 10, 10)
     
-    glColor3f(0.6, 0.6, 0.6)
+    glColor3f(0.5, 0.5, 0.5)
     glRotatef(-90, 1, 0, 0)
     
     if current_weapon == "gun":
         glTranslatef(-110, 70, 80)
-        gluCylinder(gluNewQuadric(), 30, 15, 100, 12, 12)
+        gluCylinder(gluNewQuadric(), 30, 15, 100, 10, 10)
     elif current_weapon == "sword":
         current_angle = sword_swing_angle if sword_swing_active else 90
+        if sword_swing_active:
+            print(f"Drawing sword at angle: {current_angle:.1f}")
         draw_sword(current_angle, 0, 1, 0)
     
     glPopMatrix()
 
 def draw_sword(sword_angle=90, x=0, y=1, z=0):
     glPushMatrix()
-    
-    glColor3f(1, 0.1, 0.1)
+    glColor3f(1, 0, 0)
     glTranslatef(-100, 100, 90)
     glRotatef(sword_angle, x, y, z)
-    gluCylinder(gluNewQuadric(), 20, 1, 250, 25, 25)
+    gluCylinder(gluNewQuadric(), 20, 1, 250, 20, 20)
     
-    glColor3f(0.5, 0.3, 0.2)
+    glColor3f(0.4, 0.2, 0.1)
     glTranslatef(0, 0, -30)
-    gluCylinder(gluNewQuadric(), 25, 25, 30, 12, 12)
+    gluCylinder(gluNewQuadric(), 25, 25, 30, 10, 10)
     
     glPopMatrix()
 
 def draw_bullet(x, y, z):
     glPushMatrix()
-    glColor3f(1, 0.2, 0.2)
+    glColor3f(1, 0, 0)
     glTranslatef(x, y, z)
-    glutSolidSphere(bullet_size, 10, 10)
+    glutSolidCube(bullet_size)
     glPopMatrix()
 
 def draw_all_bullets():
@@ -844,6 +775,7 @@ def update_sword_swing():
     
     if sword_swing_active:
         sword_swing_timer += 1
+        print(f"Swing timer: {sword_swing_timer}, Angle: {sword_swing_angle:.1f}")
         swing_duration = 30
         
         if sword_swing_timer <= swing_duration:
@@ -863,6 +795,7 @@ def update_sword_swing():
                         if distance < 120:
                             enemy.hurt(75)
         else:
+            print("Swing completed!")
             sword_swing_active = False
             sword_swing_timer = 0
             sword_swing_angle = 90
@@ -891,6 +824,7 @@ def mouseListener(button, state, x, y):
         if current_weapon == "gun":
             shoot_bullet()
         elif current_weapon == "sword":
+            print("Slash attack!")
             for enemy in get_enemies():
                 if not enemy.dead:
                     dx = player_x - enemy.x
@@ -902,9 +836,12 @@ def mouseListener(button, state, x, y):
     
     elif button == GLUT_RIGHT_BUTTON and state == GLUT_DOWN:
         if current_weapon == "sword":
+            print("Starting sword swing animation!")
             sword_swing_active = True
             sword_swing_timer = 0
             sword_swing_angle = 90
+        else:
+            print("Right click detected, but weapon is:", current_weapon)
 
     glutPostRedisplay()
 
@@ -1022,21 +959,6 @@ def idle():
     
     glutPostRedisplay()
 
-def setup_lighting():
-    glEnable(GL_LIGHTING)
-    glEnable(GL_LIGHT0)
-    
-    # Day/night affected lighting
-    light_intensity = 0.5 + 0.3 * math.sin(day_night_cycle * 2 * math.pi)
-    glLightfv(GL_LIGHT0, GL_POSITION, [0, 0, 1000, 0])
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, [light_intensity, light_intensity, light_intensity, 1.0])
-    glLightfv(GL_LIGHT0, GL_SPECULAR, [0.5, 0.5, 0.5, 1.0])
-    
-    glEnable(GL_COLOR_MATERIAL)
-    glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE)
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, [0.5, 0.5, 0.5, 1.0])
-    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 50.0)
-
 def showScreen():
     day_color = 0.5 + 0.3 * math.sin(day_night_cycle * 2 * math.pi)
     glClearColor(day_color * 0.2, day_color * 0.2, day_color * 0.4, 1.0)
@@ -1045,18 +967,34 @@ def showScreen():
     glViewport(0, 0, 1000, 800)
 
     setupCamera()
-    setup_lighting()
 
-    # Draw grid with texture-like pattern
+    glPointSize(20)
+    glBegin(GL_POINTS)
+    glVertex3f(-GRID_LENGTH, GRID_LENGTH, 0)
+    glEnd()
+
     glBegin(GL_QUADS)
-    for i in range(-GRID_LENGTH, GRID_LENGTH, 100):
-        for j in range(-GRID_LENGTH, GRID_LENGTH, 100):
-            color = 0.7 if (i//100 + j//100) % 2 == 0 else 0.9
-            glColor3f(color, color * 0.8, color * 0.95)
-            glVertex3f(i, j, 0)
-            glVertex3f(i + 100, j, 0)
-            glVertex3f(i + 100, j + 100, 0)
-            glVertex3f(i, j + 100, 0)
+    glColor3f(1, 1, 1)
+    glVertex3f(-GRID_LENGTH, GRID_LENGTH, 0)
+    glVertex3f(0, GRID_LENGTH, 0)
+    glVertex3f(0, 0, 0)
+    glVertex3f(-GRID_LENGTH, 0, 0)
+
+    glVertex3f(GRID_LENGTH, -GRID_LENGTH, 0)
+    glVertex3f(0, -GRID_LENGTH, 0)
+    glVertex3f(0, 0, 0)
+    glVertex3f(GRID_LENGTH, 0, 0)
+
+    glColor3f(0.7, 0.5, 0.95)
+    glVertex3f(-GRID_LENGTH, -GRID_LENGTH, 0)
+    glVertex3f(-GRID_LENGTH, 0, 0)
+    glVertex3f(0, 0, 0)
+    glVertex3f(0, -GRID_LENGTH, 0)
+
+    glVertex3f(GRID_LENGTH, GRID_LENGTH, 0)
+    glVertex3f(GRID_LENGTH, 0, 0)
+    glVertex3f(0, 0, 0)
+    glVertex3f(0, GRID_LENGTH, 0)
     glEnd()
 
     draw_obstacles()
@@ -1067,8 +1005,6 @@ def showScreen():
 
     enemies_alive = len([e for e in get_enemies() if not e.dead])
     
-    draw_player_health_bar()
-    
     draw_text(600, 660, f"Position: ({character_pos[0]:.0f}, {character_pos[1]:.0f})")
     draw_text(600, 640, f"Rotation: {player_rotation:.0f}°")
     draw_text(600, 620, f"Weapon: {current_weapon.upper()}")
@@ -1076,14 +1012,16 @@ def showScreen():
     draw_text(600, 580, f"Speed: {movement_speed:.1f}")
     draw_text(600, 560, f"Enemies Alive: {enemies_alive}")
     draw_text(600, 540, f"Collectibles: {len(collectibles)}")
-    
-    draw_text(600, 500, f"Controls:")
-    draw_text(600, 480, f"WASD - Move")
-    draw_text(600, 460, f"Arrow Keys - Rotate")
-    draw_text(600, 440, f"Q - Switch Weapon")
-    draw_text(600, 420, f"Left Click - Attack")
-    draw_text(600, 400, f"Right Click - Sword Swing")
-    draw_text(600, 380, f"R - Respawn Enemies")
+    draw_text(600, 520, f"Controls:")
+    draw_text(600, 500, f"W - Move Forward")
+    draw_text(600, 480, f"S - Move Backward")
+    draw_text(600, 460, f"A - Strafe Left")
+    draw_text(600, 440, f"D - Strafe Right")
+    draw_text(600, 420, f"Arrow Keys - Rotate")
+    draw_text(600, 400, f"Q - Switch Weapon")
+    draw_text(600, 380, f"Left Click - Shoot/Slash")
+    draw_text(600, 360, f"Right Click - Sword Swing")
+    draw_text(600, 340, f"R - Respawn Enemies")
 
     draw_text(50, 120, f"Collectibles:")
     draw_text(50, 100, f"Green Cube = +25 Health")
@@ -1107,12 +1045,9 @@ def main():
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
     glutInitWindowSize(1000, 800)
     glutInitWindowPosition(0, 0)
-    wind = glutCreateWindow(b"Enhanced 3D Game")
+    wind = glutCreateWindow(b"3D OpenGL Game")
 
     glEnable(GL_DEPTH_TEST)
-    glEnable(GL_NORMALIZE)
-    
-    init_display_lists()
     
     last_frame = time.time()
     spawn_enemies()
