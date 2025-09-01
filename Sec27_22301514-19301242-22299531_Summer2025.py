@@ -1,11 +1,8 @@
-# CSE423 LAB PROJECT (A 3D Hack And Slash GAME)
-
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 import random
 import math
-
 import time
 
 active_enemies = []
@@ -15,7 +12,6 @@ MAX_ENEMIES = 5
 MELEE_CREATURE = 1
 RANGED_ATTACKER = 2
 FINAL_BOSS = 3
-
 
 camera_pos = (0,500,500)
 camera_mode = "third_person"
@@ -160,8 +156,8 @@ def draw_collectible(x, y, z, cube_type):
 def draw_all_collectibles():
     """Draw all collectibles on the map"""
     for collectible in collectibles:
-        x, y, z, cube_type, rotation = collectible
-        draw_collectible(x, y, z, cube_type, rotation)
+        x, y, z, cube_type = collectible
+        draw_collectible(x, y, z, cube_type)
 
 def update_collectibles():
     """Update collectible animations and spawning"""
@@ -179,7 +175,7 @@ def check_collectible_collision():
     player_collision_radius = 60  # Player collision radius
     
     for i, collectible in enumerate(collectibles):
-        x, y, z, cube_type, rotation = collectible
+        x, y, z, cube_type = collectible
         
         # Calculate distance between player and collectible
         dx = player_x - x
@@ -210,16 +206,10 @@ def draw_text(x, y, text):
     glMatrixMode(GL_PROJECTION)
     glPushMatrix()
     glLoadIdentity()
-    
-    # Set up an orthographic projection that matches window coordinates
     gluOrtho2D(0, 1000, 0, 800)  # left, right, bottom, top
-
-    
     glMatrixMode(GL_MODELVIEW)
     glPushMatrix()
     glLoadIdentity()
-    
-    # Draw text at (x, y) in screen coordinates
     glRasterPos2f(x, y)
     for ch in text:
         try:
@@ -227,7 +217,6 @@ def draw_text(x, y, text):
         except:
             # Fallback: skip text rendering if font is not available
             pass
-    
     # Restore original projection and modelview matrices
     glPopMatrix()
     glMatrixMode(GL_PROJECTION)
@@ -236,7 +225,6 @@ def draw_text(x, y, text):
 
 
 def draw_player():
-    """Draw player with animated sword"""
     glPushMatrix()
     
     # Apply position and rotation transformations
@@ -410,24 +398,16 @@ def setupCamera():
     glMatrixMode(GL_PROJECTION)  # Switch to projection matrix mode
     glLoadIdentity()  # Reset the projection matrix
     # Set up a perspective projection (field of view, aspect ratio, near clip, far clip)
-    gluPerspective(fovY, 1.25, 0.1, 5000) # Think why aspect ration is 1.25?
+    gluPerspective(fovY, 1.25, 0.1, 1500) # Think why aspect ration is 1.25?
     glMatrixMode(GL_MODELVIEW)  # Switch to model-view matrix mode
     glLoadIdentity()  # Reset the model-view matrix
 
-    # Third-person camera that follows the player
-    camera_distance = 300
-    camera_height = 150
-    
-    # Calculate camera position based on player rotation
-    angle_rad = math.radians(player_rotation)
-    cam_x = player_x - camera_distance * math.cos(angle_rad)
-    cam_y = player_y - camera_distance * math.sin(angle_rad)
-    cam_z = player_z + camera_height
-    
-    # Look at the player
-    gluLookAt(cam_x, cam_y, cam_z,
-              player_x, player_y, player_z + 50,
-              0, 0, 1)
+    # Extract camera position and look-at target
+    x, y, z = camera_pos
+    # Position the camera and set its orientation
+    gluLookAt(x, y, z,  # Camera position
+              0, 0, 0,  # Look-at target
+              0, 0, 1)  # Up vector (z-axis)
 
 
 def keyboardListener(key, x, y):
@@ -493,168 +473,6 @@ def keyboardListener(key, x, y):
             current_weapon = "gun"
     
     glutPostRedisplay()  # Redraw the scene
-
-
-def specialKeyListener(key, x, y):
-    """
-    Handle special keys (arrow keys) for player rotation.
-    """
-    global player_rotation
-    
-    if key == GLUT_KEY_LEFT:  # Rotate left
-        player_rotation += 10
-    elif key == GLUT_KEY_RIGHT:  # Rotate right
-        player_rotation -= 10
-    
-    # Keep rotation within 0-360 degrees
-    player_rotation = player_rotation % 360
-    
-    glutPostRedisplay()  # Redraw the scene
-
-
-def idle():
-    """
-    Idle function that runs continuously
-    """
-    global day_night_cycle
-    # Update day/night cycle
-    day_night_cycle = (day_night_cycle + 0.0005) % 1.0
-
-    # Update bullets
-    update_bullets()
-    
-    # Update sword swing animation
-    update_sword_swing()
-    
-    # Update collectibles
-    update_collectibles()
-    
-    # Check for collectible collisions
-    check_collectible_collision()
-    
-    # Ensure the screen updates with the latest changes
-    glutPostRedisplay()
-
-
-def showScreen():
-    """
-    Display function to render the game scene:
-    - Clears the screen and sets up the camera.
-    - Draws everything of the screen
-    """
-    # Clear color and depth buffers
-    day_color = 0.5 + 0.3 * math.sin(day_night_cycle * 2 * math.pi)
-    glClearColor(day_color * 0.2, day_color * 0.2, day_color * 0.4, 1.0)
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    glLoadIdentity()  # Reset modelview matrix
-    glViewport(0, 0, 1000, 800)  # Set viewport size
-
-    setupCamera()  # Configure camera perspective
-
-    # Draw a random points
-    glPointSize(20)
-    glBegin(GL_POINTS)
-    glVertex3f(-GRID_LENGTH, GRID_LENGTH, 0)
-    glEnd()
-
-    # Draw the grid (game floor)
-    glBegin(GL_QUADS)
-    
-    glColor3f(1, 1, 1)
-    glVertex3f(-GRID_LENGTH, GRID_LENGTH, 0)
-    glVertex3f(0, GRID_LENGTH, 0)
-    glVertex3f(0, 0, 0)
-    glVertex3f(-GRID_LENGTH, 0, 0)
-
-    glVertex3f(GRID_LENGTH, -GRID_LENGTH, 0)
-    glVertex3f(0, -GRID_LENGTH, 0)
-    glVertex3f(0, 0, 0)
-    glVertex3f(GRID_LENGTH, 0, 0)
-
-
-    glColor3f(0.7, 0.5, 0.95)
-    glVertex3f(-GRID_LENGTH, -GRID_LENGTH, 0)
-    glVertex3f(-GRID_LENGTH, 0, 0)
-    glVertex3f(0, 0, 0)
-    glVertex3f(0, -GRID_LENGTH, 0)
-
-    glVertex3f(GRID_LENGTH, GRID_LENGTH, 0)
-    glVertex3f(GRID_LENGTH, 0, 0)
-    glVertex3f(0, 0, 0)
-    glVertex3f(0, GRID_LENGTH, 0)
-    glEnd()
-
-    # Draw the obstacles
-    draw_obstacles()
-
-    # Draw the character
-    draw_player()
-
-    # Draw bullets
-    draw_all_bullets()
-
-    # Draw collectibles
-    draw_all_collectibles()
-
-    # Display game info text at a fixed screen position
-    draw_text(600, 660, f"Position: ({character_pos[0]:.0f}, {character_pos[1]:.0f})")
-    draw_text(600, 640, f"Rotation: {player_rotation:.0f}°")
-    draw_text(600, 620, f"Weapon: {current_weapon.upper()}")
-    draw_text(600, 600, f"Health: {player_health}/{max_health}")
-    draw_text(600, 580, f"Speed: {movement_speed:.1f}")
-    draw_text(600, 560, f"Collectibles: {len(collectibles)}")
-    draw_text(600, 540, f"Controls:")
-    draw_text(600, 520, f"W - Move Forward")
-    draw_text(600, 500, f"S - Move Backward")
-    draw_text(600, 480, f"A - Strafe Left")
-    draw_text(600, 460, f"D - Strafe Right")
-    draw_text(600, 440, f"Arrow Keys - Rotate")
-    draw_text(600, 420, f"Q - Switch Weapon")
-    draw_text(600, 400, f"Left Click - Shoot/Slash")
-    draw_text(600, 380, f"Right Click - Sword Swing")
-
-    # Collectible legend
-    draw_text(50, 100, f"Collectibles:")
-    draw_text(50, 80, f"Green Cube = +25 Health")
-    draw_text(50, 60, f"Red Cube = +5 Speed")
-
-    # Swap buffers for smooth rendering (double buffering)
-    glutSwapBuffers()
-
-
-# Main function to set up OpenGL window and loop
-def main():
-    glutInit()
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)  # Double buffering, RGB color, depth test
-    glutInitWindowSize(1000, 800)  # Window size
-    glutInitWindowPosition(0, 0)  # Window position
-    wind = glutCreateWindow(b"3D OpenGL Intro")  # Create the window
-
-    glutDisplayFunc(showScreen)  # Register display function
-    glutKeyboardFunc(keyboardListener)  # Register keyboard listener
-    glutSpecialFunc(specialKeyListener)  # Register special key listener for arrow keys
-    glutMouseFunc(mouseListener)  # Register mouse listener for shooting/slashing
-    glutIdleFunc(idle)  # Register the idle function to update bullets and effects
-
-    # Initialize some collectibles
-    for _ in range(3):
-        spawn_collectible()
-
-    glutMainLoop()  # Enter the GLUT main loop
-
-if __name__ == "__main__":
-    main()
-
-
-
-
-
-
-
-
-
-# Srizon enemy part updated
-
 
 
 class EnemyCreature:
@@ -726,7 +544,7 @@ class EnemyCreature:
         dy = self.y - target[1]
         return math.sqrt(dx*dx + dy*dy)
 
-    def handle_behavior(self, delta_time, distance_to_player, current_time):
+    def handle_ai_behavior(self, delta_time, distance_to_player, current_time):
         if self.creature_type == MELEE_CREATURE:
             if distance_to_player < 350:
                 self.behavior_state = "hunting"
@@ -896,7 +714,7 @@ class EnemyCreature:
             
         elif self.creature_type == RANGED_ATTACKER:
             glPushMatrix()
-            glColor3f(1, 0, 0)
+            glColor3f(0, 0, 1)  # Blue for ranged
             glutSolidSphere(25, 20, 20)
             glPopMatrix()
             
@@ -906,9 +724,9 @@ class EnemyCreature:
             glutSolidSphere(12, 16, 16)
             glPopMatrix()
             
-        else:
+        else:  # FINAL_BOSS
             glPushMatrix()
-            glColor3f(1, 0, 0)
+            glColor3f(0.8, 0, 0.8)  # Purple for boss
             glutSolidSphere(35, 20, 20)
             glPopMatrix()
             
@@ -926,11 +744,11 @@ class EnemyCreature:
 
     def draw_current_weapon(self):
         if self.equipped_weapon == "sword":
-            self.draw_sword()
+            self.draw_weapon_sword()
         else:
-            self.draw_gun()
+            self.draw_weapon_gun()
     
-    def draw_sword(self):
+    def draw_weapon_sword(self):
         glPushMatrix()
         glTranslatef(self.collision_radius * 0.7, 0, 0)
         
@@ -945,13 +763,6 @@ class EnemyCreature:
             glutSolidCube(80)
             glPopMatrix()
             
-            glColor3f(1.0, 0.3, 0.3)
-            for i in range(5):
-                glPushMatrix()
-                glTranslatef(random.randint(-3, 3), i * 12 - 30, random.randint(-2, 2))
-                glutSolidSphere(2, 6, 6)
-                glPopMatrix()
-                
         elif self.creature_type == FINAL_BOSS:
             glColor3f(0.6, 0.5, 0.2)
             glPushMatrix()
@@ -959,12 +770,6 @@ class EnemyCreature:
             glutSolidCube(90)
             glPopMatrix()
             
-            glColor3f(1.0, 0.8, 0.0)
-            for i in range(4):
-                glPushMatrix()
-                glTranslatef(0, i * 15 - 30, 0)
-                glutSolidCube(6)
-                glPopMatrix()
         else:
             glColor3f(0.0, 0.8, 1.0)
             glPushMatrix()
@@ -972,15 +777,16 @@ class EnemyCreature:
             glutSolidCube(70)
             glPopMatrix()
         
+        # Draw handle
         glColor3f(0.15, 0.15, 0.2)
         glPushMatrix()
         glTranslatef(0, -40, 0)
-        glutSolidCylinder(6, 25, 8, 8)
+        gluCylinder(gluNewQuadric(), 6, 6, 25, 8, 8)
         glPopMatrix()
         
         glPopMatrix()
     
-    def draw_gun(self):
+    def draw_weapon_gun(self):
         glPushMatrix()
         glTranslatef(self.collision_radius * 0.6, 0, 10)
         
@@ -995,7 +801,7 @@ class EnemyCreature:
             glPushMatrix()
             glTranslatef(25, 0, 0)
             glRotatef(90, 0, 1, 0)
-            glutSolidCylinder(6, 50, 8, 8)
+            gluCylinder(gluNewQuadric(), 6, 6, 50, 8, 8)
             glPopMatrix()
             
             glColor3f(0.0, 0.6, 1.0)
@@ -1009,7 +815,7 @@ class EnemyCreature:
             glPushMatrix()
             glTranslatef(35, 0, 0)
             glRotatef(90, 0, 1, 0)
-            glutSolidCylinder(10, 80, 12, 12)
+            gluCylinder(gluNewQuadric(), 10, 10, 80, 12, 12)
             glPopMatrix()
             
             glColor3f(0.8, 0.6, 0.2)
@@ -1110,23 +916,31 @@ def spawn_new_enemies():
 def update_all_enemies(delta_time):
     global player_health
     
-    for creature in active_enemies:
-        creature.update(delta_time)
-        distance = math.sqrt((creature.x - player_x)**2 + (creature.y - player_y)**2)
-        if distance < creature.collision_radius + 40:
-            player_health = max(0, player_health - 1)
+    for creature in active_enemies[:]:  # Use slice to avoid modification during iteration
+        if not creature.is_dead:
+            creature.update(delta_time)
+            distance = math.sqrt((creature.x - player_x)**2 + (creature.y - player_y)**2)
+            if distance < creature.collision_radius + 40:
+                player_health = max(0, player_health - 1)
+        else:
+            active_enemies.remove(creature)  # Remove dead enemies
             
-    for boss in bosses:
-        boss.update(delta_time)
-        distance = math.sqrt((boss.x - player_x)**2 + (boss.y - player_y)**2)
-        if distance < boss.collision_radius + 40:
-            player_health = max(0, player_health - 2)
+    for boss in bosses[:]:  # Use slice to avoid modification during iteration
+        if not boss.is_dead:
+            boss.update(delta_time)
+            distance = math.sqrt((boss.x - player_x)**2 + (boss.y - player_y)**2)
+            if distance < boss.collision_radius + 40:
+                player_health = max(0, player_health - 2)
+        else:
+            bosses.remove(boss)  # Remove dead bosses
 
 def render_all_enemies():
     for creature in active_enemies:
-        creature.render_creature()
+        if not creature.is_dead:
+            creature.render_creature()
     for boss in bosses:
-        boss.render_creature()
+        if not boss.is_dead:
+            boss.render_creature()
 
 def get_all_enemies():
     return active_enemies + bosses
@@ -1139,11 +953,207 @@ def deal_damage_at_location(x, y, damage_amount, splash_effect_radius=50):
         if distance <= splash_effect_radius:
             creature.take_damage(damage_amount)
 
+# Add enemy collision detection for bullets
+def check_bullet_enemy_collision():
+    """Check if bullets hit enemies and deal damage"""
+    global bullets
+    
+    for bullet_index, bullet in enumerate(bullets[:]):
+        bullet_x, bullet_y, bullet_z = bullet[0], bullet[1], bullet[2]
+        
+        for enemy in get_all_enemies():
+            if enemy.is_dead:
+                continue
+                
+            # Calculate distance between bullet and enemy
+            dx = bullet_x - enemy.x
+            dy = bullet_y - enemy.y
+            distance = math.sqrt(dx*dx + dy*dy)
+            
+            # Check collision
+            if distance < (enemy.collision_radius + bullet_size):
+                # Hit detected!
+                enemy.take_damage(30)  # Deal 30 damage
+                bullets.remove(bullet)  # Remove the bullet
+                print(f"Enemy hit! Health: {enemy.current_health}")
+                break  # Exit inner loop since bullet is removed
+
+def specialKeyListener(key, x, y):
+    """
+    Handle special keys (arrow keys) for player rotation.
+    """
+    global player_rotation
+    
+    if key == GLUT_KEY_LEFT:  # Rotate left
+        player_rotation += 10
+    elif key == GLUT_KEY_RIGHT:  # Rotate right
+        player_rotation -= 10
+    
+    # Keep rotation within 0-360 degrees
+    player_rotation = player_rotation % 360
+    
+    glutPostRedisplay()  # Redraw the scene
+
+# Add frame timing
+last_time = time.time()
+
+def idle():
+    """
+    Idle function that runs continuously
+    """
+    global day_night_cycle, last_time
+    
+    # Calculate delta time
+    current_time = time.time()
+    delta_time = current_time - last_time
+    last_time = current_time
+    
+    # Update day/night cycle
+    day_night_cycle = (day_night_cycle + 0.0005) % 1.0
+
+    # Update bullets
+    update_bullets()
+    
+    # Check bullet-enemy collisions
+    check_bullet_enemy_collision()
+    
+    # Update sword swing animation
+    update_sword_swing()
+    
+    # Update collectibles
+    update_collectibles()
+    
+    # Check for collectible collisions
+    check_collectible_collision()
+    
+    # Update enemies
+    update_all_enemies(delta_time)
+    
+    # Ensure the screen updates with the latest changes
+    glutPostRedisplay()
 
 
+def showScreen():
+    """
+    Display function to render the game scene:
+    - Clears the screen and sets up the camera.
+    - Draws everything of the screen
+    """
+    # Enable depth testing
+    glEnable(GL_DEPTH_TEST)
+    
+    # Clear color and depth buffers
+    day_color = 0.5 + 0.3 * math.sin(day_night_cycle * 2 * math.pi)
+    glClearColor(day_color * 0.2, day_color * 0.2, day_color * 0.4, 1.0)
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    glLoadIdentity()  # Reset modelview matrix
+    glViewport(0, 0, 1000, 800)  # Set viewport size
+
+    setupCamera()  # Configure camera perspective
+
+    # Draw a random points
+    glPointSize(20)
+    glBegin(GL_POINTS)
+    glVertex3f(-GRID_LENGTH, GRID_LENGTH, 0)
+    glEnd()
+
+    # Draw the grid (game floor)
+    glBegin(GL_QUADS)
+    
+    glColor3f(1, 1, 1)
+    glVertex3f(-GRID_LENGTH, GRID_LENGTH, 0)
+    glVertex3f(0, GRID_LENGTH, 0)
+    glVertex3f(0, 0, 0)
+    glVertex3f(-GRID_LENGTH, 0, 0)
+
+    glVertex3f(GRID_LENGTH, -GRID_LENGTH, 0)
+    glVertex3f(0, -GRID_LENGTH, 0)
+    glVertex3f(0, 0, 0)
+    glVertex3f(GRID_LENGTH, 0, 0)
+
+    glColor3f(0.7, 0.5, 0.95)
+    glVertex3f(-GRID_LENGTH, -GRID_LENGTH, 0)
+    glVertex3f(-GRID_LENGTH, 0, 0)
+    glVertex3f(0, 0, 0)
+    glVertex3f(0, -GRID_LENGTH, 0)
+
+    glVertex3f(GRID_LENGTH, GRID_LENGTH, 0)
+    glVertex3f(GRID_LENGTH, 0, 0)
+    glVertex3f(0, 0, 0)
+    glVertex3f(0, GRID_LENGTH, 0)
+    glEnd()
+
+    # Draw the obstacles
+    draw_obstacles()
+
+    # Draw the character
+    draw_player()
+
+    # Draw bullets
+    draw_all_bullets()
+
+    # Draw collectibles
+    draw_all_collectibles()
+
+    # Draw enemies
+    render_all_enemies()
+
+    # Display game info text at a fixed screen position
+    draw_text(600, 660, f"Position: ({character_pos[0]:.0f}, {character_pos[1]:.0f})")
+    draw_text(600, 640, f"Rotation: {player_rotation:.0f}°")
+    draw_text(600, 620, f"Weapon: {current_weapon.upper()}")
+    draw_text(600, 600, f"Health: {player_health}/{max_health}")
+    draw_text(600, 580, f"Speed: {movement_speed:.1f}")
+    draw_text(600, 560, f"Collectibles: {len(collectibles)}")
+    draw_text(600, 540, f"Controls:")
+    draw_text(600, 520, f"W - Move Forward")
+    draw_text(600, 500, f"S - Move Backward")
+    draw_text(600, 480, f"A - Strafe Left")
+    draw_text(600, 460, f"D - Strafe Right")
+    draw_text(600, 440, f"Arrow Keys - Rotate")
+    draw_text(600, 420, f"Q - Switch Weapon")
+    draw_text(600, 400, f"Left Click - Shoot/Slash")
+    draw_text(600, 380, f"Right Click - Sword Swing")
+
+    # Enemy info
+    draw_text(50, 200, f"Enemies: {len(active_enemies)}")
+    draw_text(50, 180, f"Bosses: {len(bosses)}")
+
+    # Collectible legend
+    draw_text(50, 100, f"Collectibles:")
+    draw_text(50, 80, f"Green Cube = +25 Health")
+    draw_text(50, 60, f"Red Cube = +5 Speed")
+
+    # Swap buffers for smooth rendering (double buffering)
+    glutSwapBuffers()
 
 
+# Main function to set up OpenGL window and loop
+def main():
+    glutInit()
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)  # Double buffering, RGB color, depth test
+    glutInitWindowSize(1000, 800)  # Window size
+    glutInitWindowPosition(0, 0)  # Window position
+    wind = glutCreateWindow(b"3D OpenGL Intro")  # Create the window
 
+    glutDisplayFunc(showScreen)  # Register display function
+    glutKeyboardFunc(keyboardListener)  # Register keyboard listener
+    glutSpecialFunc(specialKeyListener)  # Register special key listener for arrow keys
+    glutMouseFunc(mouseListener)  # Register mouse listener for shooting/slashing
+    glutIdleFunc(idle)  # Register the idle function to update bullets and effects
 
+    # Enable OpenGL features
+    glEnable(GL_DEPTH_TEST)
+    
+    # Initialize some collectibles
+    for _ in range(3):
+        spawn_collectible()
+    
+    # Spawn initial enemies
+    spawn_new_enemies()
 
+    glutMainLoop()  # Enter the GLUT main loop
+
+if __name__ == "__main__":
+    main()
 
