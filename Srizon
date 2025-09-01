@@ -1005,10 +1005,20 @@ def spawn_enemies():
             boss_list.append(Enemy(x, y, 50, BOSS_TYPE))
 
 def tick_all_enemies(dt):
+    global player_health
+    
     for e in enemy_list:
         e.tick(dt)
+        dist = math.sqrt((e.x - player_x)**2 + (e.y - player_y)**2)
+        if dist < e.radius + 40:
+            player_health = max(0, player_health - 1)
+            
     for b in boss_list:
         b.tick(dt)
+        dist = math.sqrt((b.x - player_x)**2 + (b.y - player_y)**2)
+        if dist < b.radius + 40:
+            player_health = max(0, player_health - 2)
+
 
 def render_all_enemies():
     for e in enemy_list:
