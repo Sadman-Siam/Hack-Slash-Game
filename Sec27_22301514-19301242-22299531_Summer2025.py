@@ -33,7 +33,10 @@ bullet_speed = 15.0
 bullet_size = 5
 
 #Sword
-sword_slash = False
+sword_swing_active = False
+sword_swing_timer = 0
+sword_swing_angle = 90
+sword_swing_speed = 8
 
 def draw_text(x, y, text):
     glColor3f(1,1,1)
@@ -66,6 +69,7 @@ def draw_text(x, y, text):
 
 
 def draw_player():
+    """Draw player with animated sword"""
     glPushMatrix()
     
     # Apply position and rotation transformations
@@ -106,16 +110,36 @@ def draw_player():
         glTranslatef(-110, 70, 80)
         gluCylinder(gluNewQuadric(), 30, 15, 100, 10, 10)
     elif current_weapon == "sword":
-        draw_sword()
+        # Use the animated sword angle if swinging, otherwise use default
+        current_angle = sword_swing_angle if sword_swing_active else 90
+        # Debug output to verify angle changes
+        if sword_swing_active:
+            print(f"Drawing sword at angle: {current_angle:.1f}")
+        draw_sword(current_angle, 0, 1, 0)
+    
     glPopMatrix()
 
-def draw_sword(sword_angle =90, x=0, y=1, z=0):
+def draw_sword(sword_angle=90, x=0, y=1, z=0):
+    """Draw sword with proper positioning and rotation"""
     glPushMatrix()
     
+    # Sword color (red)
     glColor3f(1, 0, 0)  
+    
+    # Position the sword relative to the player's hand
     glTranslatef(-100, 100, 90)
+    
+    # Apply the rotation - this is the key part that makes it swing
     glRotatef(sword_angle, x, y, z)
+    
+    # Draw the sword as a tapered cylinder (blade)
     gluCylinder(gluNewQuadric(), 20, 1, 250, 20, 20)
+    
+    # Optional: Draw sword handle
+    glColor3f(0.4, 0.2, 0.1)  # Brown handle
+    glTranslatef(0, 0, -30)
+    gluCylinder(gluNewQuadric(), 25, 25, 30, 10, 10)
+    
     glPopMatrix()
 
 def draw_bullet(x, y, z):
@@ -137,6 +161,78 @@ def update_bullets():
         bullet[1] += bullet[4]
         bullet[2] += bullet[5]
 
+def update_sword_swing():
+    """Update sword swing animation with debug output"""
+    global sword_swing_active, sword_swing_timer, sword_swing_angle
+    
+    if sword_swing_active:
+        sword_swing_timer += 1
+        
+        # Debug output to see if function is being called
+        print(f"Swing timer: {sword_swing_timer}, Angle: {sword_swing_angle:.1f}")
+        
+        # Swing duration (frames)
+        swing_duration = 30  # Made it a bit longer to see the motion better
+        
+        if sword_swing_timer <= swing_duration:
+            # Calculate swing progress (0 to 1)
+            progress = sword_swing_timer / swing_duration
+            
+            # Create a smooth swing motion - swinging around Y-axis
+            # From 90° (vertical) to -45° (diagonal down) and back
+            if progress <= 0.5:
+                # First half: swing down from 90° to -45°
+                sword_swing_angle = 90 - (135 * (progress * 2))
+            else:
+                # Second half: swing back up from -45° to 90°
+                sword_swing_angle = -45 + (135 * ((progress - 0.5) * 2))
+        else:
+            # End the swing
+            print("Swing completed!")
+            sword_swing_active = False
+            sword_swing_timer = 0
+            sword_swing_angle = 90  # Reset to default position
+
+def alternative_sword_swing():
+    """Alternative swing implementation using different rotation axis"""
+    global sword_swing_active, sword_swing_timer, sword_swing_angle
+    
+    if sword_swing_active:
+        sword_swing_timer += 1
+        swing_duration = 25
+        
+        if sword_swing_timer <= swing_duration:
+            # Try swinging around Z-axis instead
+            progress = sword_swing_timer / swing_duration
+            # Swing from 0° to 90° and back
+            if progress <= 0.5:
+                sword_swing_angle = 90 * (progress * 2)
+            else:
+                sword_swing_angle = 90 - (90 * ((progress - 0.5) * 2))
+        else:
+            sword_swing_active = False
+            sword_swing_timer = 0
+            sword_swing_angle = 90
+
+def simple_sword_swing():
+    """Very simple sword swing for testing"""
+    global sword_swing_active, sword_swing_timer, sword_swing_angle
+    
+    if sword_swing_active:
+        sword_swing_timer += 1
+        print(f"Simple swing timer: {sword_swing_timer}")
+        
+        # Just make the sword swing back and forth
+        if sword_swing_timer < 15:
+            sword_swing_angle = 90 + sword_swing_timer * 6  # Swing one way
+        elif sword_swing_timer < 30:
+            sword_swing_angle = 180 - (sword_swing_timer - 15) * 6  # Swing back
+        else:
+            print("Simple swing completed!")
+            sword_swing_active = False
+            sword_swing_timer = 0
+            sword_swing_angle = 90
+
 def shoot_bullet():
     global bullets, player_x, player_y, player_z, player_rotation, bullets_fired, max_bullets, game_over, is_dying
 
@@ -157,15 +253,24 @@ def shoot_bullet():
 
 def mouseListener(button, state, x, y):
     """Handle mouse clicks for shooting and slashing"""
-    global slash_active, slash_timer, sword_swing_active, sword_swing_timer, sword_swing_angle
+    global sword_swing_active, sword_swing_timer, sword_swing_angle
     
     if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
         if current_weapon == "gun":
             shoot_bullet()
         elif current_weapon == "sword":
-            draw_sword(sword_angle =90, x=0, y=1, z=0)
-            draw_sword(sword_angle =45, x=0, y=1, z=0)
-            draw_sword(sword_angle =0, x=0, y=1, z=0)
+            # Simple slash attack
+            print("Slash attack!")
+    
+    elif button == GLUT_RIGHT_BUTTON and state == GLUT_DOWN:
+        if current_weapon == "sword":
+            # Start sword swing animation
+            print("Starting sword swing animation!")
+            sword_swing_active = True
+            sword_swing_timer = 0
+            sword_swing_angle = 90
+        else:
+            print("Right click detected, but weapon is:", current_weapon)
 
     glutPostRedisplay()
 
@@ -274,14 +379,14 @@ def specialKeyListener(key, x, y):
 
 def idle():
     """
-    Idle function that runs continuously:
-    - Updates bullets, slash effects, and sword swing animation
-    - Triggers screen redraw for real-time updates.
+    Idle function that runs continuously
     """
-    global slash_active, slash_timer, sword_swing_active, sword_swing_timer
-    
     # Update bullets
     update_bullets()
+    
+    # Update sword swing animation
+    update_sword_swing()
+    
     # Ensure the screen updates with the latest changes
     glutPostRedisplay()
 
